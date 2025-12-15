@@ -1,0 +1,230 @@
+#include "mode_controller.h"
+#include <EEPROM.h>
+
+ModeController::ModeController(StateManager& state, SwitchHandler& switches, RelayController& relays)
+  : state(state), switches(switches), relays(relays) {
+}
+
+void ModeController::detectSwitchPatterns() {
+  unsigned long now = millis();
+
+  // Check for long press of outer switches (mode change to channel set)
+  if (switches.isLongPress(0, 3)) {
+    enterChannelSetMode();
+    return;
+  }
+
+  // Don't process other patterns while holding outer switches
+  if (switches.isPressed(0) && switches.isPressed(3)) {
+    return;
+  }
+
+  // Check for 2-second long press of center switches (edit mode)
+  // Only allow in BANK_MODE when a preset is active
+  if (state.currentMode == BANK_MODE && state.activePreset != -1) {
+    if (switches.isLongPress(1, 2, EDIT_MODE_LONG_PRESS_MS)) {
+      enterEditMode();
+      return;
+    }
+  }
+
+  // In edit mode, check for exit
+  if (state.currentMode == EDIT_MODE) {
+    if (switches.isLongPress(1, 2, EDIT_MODE_LONG_PRESS_MS)) {
+      exitEditMode();
+      return;
+    }
+
+    // Don't process other patterns while holding center switches in edit mode
+    if (switches.isPressed(1) && switches.isPressed(2)) {
+      return;
+    }
+  }
+
+  // Check for simultaneous presses (within window)
+  bool sw1Pressed = switches.isRecentPress(0);
+  bool sw2Pressed = switches.isRecentPress(1);
+  bool sw3Pressed = switches.isRecentPress(2);
+  bool sw4Pressed = switches.isRecentPress(3);
+
+  // Center switches: toggle Manual/Bank mode
+  if (sw2Pressed && sw3Pressed) {
+    if (state.currentMode == MANUAL_MODE) {
+      state.currentMode = BANK_MODE;
+      state.displayState = SHOWING_BANK;
+    } else if (state.currentMode == BANK_MODE) {
+      state.currentMode = MANUAL_MODE;
+      state.displayState = SHOWING_MANUAL;
+      // Clear global preset state when leaving bank mode
+      state.globalPresetActive = false;
+      state.activePreset = -1;
+    }
+    switches.clearRecentPresses();
+    return;
+  }
+
+  // Right switches: Bank up (only in bank mode)
+  if (state.currentMode == BANK_MODE && sw3Pressed && sw4Pressed) {
+    state.currentBank++;
+    if (state.currentBank > 32) state.currentBank = 1;
+    state.displayState = SHOWING_BANK;
+    // Clear global preset when changing banks
+    state.globalPresetActive = false;
+    state.activePreset = -1;
+    switches.clearRecentPresses();
+    return;
+  }
+
+  // Left switches: Bank down (only in bank mode)
+  if (state.currentMode == BANK_MODE && sw1Pressed && sw2Pressed) {
+    if (state.currentBank == 1) state.currentBank = 32;
+    else state.currentBank--;
+    state.displayState = SHOWING_BANK;
+    // Clear global preset when changing banks
+    state.globalPresetActive = false;
+    state.activePreset = -1;
+    switches.clearRecentPresses();
+    return;
+  }
+
+  // In channel set mode
+  if (state.currentMode == CHANNEL_SET_MODE) {
+    // Center switches: exit
+    if (sw2Pressed && sw3Pressed) {
+      exitChannelSetMode();
+      switches.clearRecentPresses();
+      return;
+    }
+
+    // Left switches: decrease channel
+    if (sw1Pressed && sw2Pressed) {
+      if (state.midiChannel == 1) state.midiChannel = 16;
+      else state.midiChannel--;
+      state.channelModeStartTime = now;
+      switches.clearRecentPresses();
+      return;
+    }
+
+    // Right switches: increase channel
+    if (sw3Pressed && sw4Pressed) {
+      if (state.midiChannel == 16) state.midiChannel = 1;
+      else state.midiChannel++;
+      state.channelModeStartTime = now;
+      switches.clearRecentPresses();
+      return;
+    }
+
+    // Timeout check
+    if ((now - state.channelModeStartTime) > CHANNEL_TIMEOUT_MS) {
+      exitChannelSetMode();
+    }
+    return;
+  }
+
+  // Individual switch presses
+  for (int i = 0; i < 4; i++) {
+    if (switches.isRecentPress(i)) {
+      handleSingleSwitchPress(i);
+      switches.clearRecentPresses();
+      break;  // Only handle one at a time
+    }
+  }
+}
+
+void ModeController::enterEditMode() {
+  state.currentMode = EDIT_MODE;
+  // Copy current loop states to edit buffer
+  for (int i = 0; i < 4; i++) {
+    state.editModeLoopStates[i] = state.loopStates[i];
+  }
+  state.displayState = EDIT_MODE_SHOWING;
+  state.editModeFlashTime = millis();
+  state.editModeFlashState = true;
+}
+
+void ModeController::exitEditMode() {
+  // Copy edited states back to main loop states
+  for (int i = 0; i < 4; i++) {
+    state.loopStates[i] = state.editModeLoopStates[i];
+  }
+  // Update relays immediately with new states
+  relays.update(state.loopStates);
+
+  // Show "SAVED" message
+  state.displayState = SHOWING_SAVED;
+  state.savedDisplayStartTime = millis();
+  state.currentMode = BANK_MODE;
+}
+
+void ModeController::handleSingleSwitchPress(uint8_t switchIndex) {
+  if (state.currentMode == MANUAL_MODE) {
+    // Toggle loop state
+    state.loopStates[switchIndex] = !state.loopStates[switchIndex];
+  }
+  else if (state.currentMode == EDIT_MODE) {
+    // Toggle loop state in edit buffer
+    state.editModeLoopStates[switchIndex] = !state.editModeLoopStates[switchIndex];
+  }
+  else if (state.currentMode == BANK_MODE) {
+    // Check if pressing the same switch as the active preset
+    if (state.activePreset == switchIndex && !state.globalPresetActive) {
+      // Activate global preset
+      state.globalPresetActive = true;
+      state.displayState = SHOWING_BANK;
+      // Don't send MIDI, just activate global preset mode
+    }
+    else {
+      // Exit global preset if active, or just send normal PC
+      state.globalPresetActive = false;
+      state.activePreset = switchIndex;
+
+      // Send MIDI Program Change
+      uint8_t pc = (state.currentBank * 4) + switchIndex + 1;
+      sendMIDIProgramChange(pc, state.midiChannel);
+
+      // Flash PC number on display
+      state.flashingPC = pc;
+      state.pcFlashStartTime = millis();
+      state.displayState = FLASHING_PC;
+    }
+  }
+}
+
+void ModeController::enterChannelSetMode() {
+  state.currentMode = CHANNEL_SET_MODE;
+  state.displayState = SHOWING_CHANNEL;
+  state.channelModeStartTime = millis();
+}
+
+void ModeController::exitChannelSetMode() {
+  EEPROM.write(EEPROM_CHANNEL_ADDR, state.midiChannel);
+  state.currentMode = BANK_MODE;  // Return to bank mode
+  state.displayState = SHOWING_BANK;
+}
+
+void ModeController::updateStateMachine() {
+  unsigned long now = millis();
+
+  // Handle PC flash timeout
+  if (state.displayState == FLASHING_PC) {
+    if ((now - state.pcFlashStartTime) > PC_FLASH_MS) {
+      state.displayState = SHOWING_BANK;
+    }
+  }
+
+  // Handle edit mode flashing
+  if (state.currentMode == EDIT_MODE) {
+    if ((now - state.editModeFlashTime) > EDIT_FLASH_INTERVAL_MS) {
+      state.editModeFlashState = !state.editModeFlashState;
+      state.displayState = state.editModeFlashState ? EDIT_MODE_SHOWING : EDIT_MODE_BLANK;
+      state.editModeFlashTime = now;
+    }
+  }
+
+  // Handle saved display timeout
+  if (state.displayState == SHOWING_SAVED) {
+    if ((now - state.savedDisplayStartTime) > SAVED_DISPLAY_MS) {
+      state.displayState = SHOWING_BANK;
+    }
+  }
+}
