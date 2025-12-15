@@ -1,0 +1,16 @@
+#include "midi_handler.h"
+
+const uint32_t MIDI_BAUD = 31250;
+
+void initMIDI() {
+  Serial.begin(MIDI_BAUD);
+}
+
+void sendMIDIProgramChange(uint8_t program, uint8_t channel) {
+  // Program Change: 0xC0 + channel (0-15), then program number (0-127)
+  uint8_t statusByte = 0xC0 | ((channel - 1) & 0x0F);
+  uint8_t programByte = (program - 1) & 0x7F;  // PC 1-128 maps to 0-127
+
+  Serial.write(statusByte);
+  Serial.write(programByte);
+}
