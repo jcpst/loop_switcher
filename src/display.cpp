@@ -10,7 +10,7 @@ void Display::begin() {
   lc.clearDisplay(0);
 }
 
-void Display::update(DisplayState state, uint8_t value, bool loopStates[4], bool globalPreset) {
+void Display::update(DisplayState state, uint8_t value, bool loopStates[4], bool globalPreset, uint8_t animFrame) {
   switch (state) {
     case SHOWING_MANUAL:
       displayManualStatus(loopStates);
@@ -32,25 +32,19 @@ void Display::update(DisplayState state, uint8_t value, bool loopStates[4], bool
       displayChannel(value);
       break;
 
-    case EDIT_MODE_SHOWING:
-      displayEdit();
-      break;
-
-    case EDIT_MODE_BLANK:
-      clear();
+    case EDIT_MODE_ANIMATED:
+      displayEdit(animFrame);
       break;
   }
 }
 
 void Display::displayBankNumber(uint8_t num, bool globalPreset) {
-  // Display "bAnK XX" or "bAnK XX*" on 8 digits (positions 7-0, left to right)
   clear();
 
   setCharAt(7, 'b');
   setCharAt(6, 'A');
   setCharAt(5, 'n');
   setCharAt(4, 'K');
-  // Position 3 is space
 
   uint8_t tens = num / 10;
   uint8_t ones = num % 10;
@@ -58,21 +52,18 @@ void Display::displayBankNumber(uint8_t num, bool globalPreset) {
   lc.setDigit(0, 1, tens, false);
   lc.setDigit(0, 0, ones, false);
 
-  // Show asterisk symbol on position 2 if global preset is active
   if (globalPreset) {
-    // Asterisk pattern: segments A, F, G, B, C (top, top-left, middle, top-right, bottom-right)
-    // This creates a star-like appearance on 7-segment display
-    lc.setRow(0, 2, 0b01110011);  // Custom asterisk pattern
+    lc.setChar(0, 3, '-', false);
   }
 }
 
 void Display::displayChannel(uint8_t ch) {
-  // Display "Ch XX" on 8 digits
   clear();
 
   setCharAt(7, 'C');
   setCharAt(6, 'h');
-  // Positions 5-2 are space
+  setCharAt(5, 'a');
+  setCharAt(4, 'n');
 
   uint8_t tens = ch / 10;
   uint8_t ones = ch % 10;
@@ -81,14 +72,19 @@ void Display::displayChannel(uint8_t ch) {
   lc.setDigit(0, 0, ones, false);
 }
 
-void Display::displayEdit() {
-  // Display "Edit" centered on 8 digits
+void Display::displayEdit(uint8_t animFrame) {
+  // Display "Edit" with scrolling decimal animation (E->d->i->t)
   clear();
 
-  setCharAt(5, 'E');
-  setCharAt(4, 'd');
-  setCharAt(3, 'i');
-  setCharAt(2, 't');
+  // Show "Edit" text with scrolling decimal from left to right
+  lc.setChar(0, 5, 'E', animFrame == 0);
+  lc.setChar(0, 4, 'd', animFrame == 1);
+  lc.setChar(0, 3, 'i', animFrame == 2);
+  lc.setChar(0, 2, 't', animFrame == 3);
+
+  // Add trailing decimals for scroll effect
+  if (animFrame == 4) lc.setChar(0, 1, ' ', true);
+  if (animFrame == 5) lc.setChar(0, 0, ' ', true);
 }
 
 void Display::displaySaved() {
@@ -103,16 +99,12 @@ void Display::displaySaved() {
 }
 
 void Display::displayManualStatus(bool loopStates[4]) {
-  // Show loop states on rightmost 4 digits
   clear();
 
-  for (int i = 0; i < 4; i++) {
-    if (loopStates[i]) {
-      lc.setDigit(0, i, i + 1, false);
-    } else {
-      lc.setChar(0, i, '-', false);
-    }
-  }
+  setCharAt(6, loopStates[3] ? '4' : '_');
+  setCharAt(4, loopStates[2] ? '3' : '_');
+  setCharAt(2, loopStates[1] ? '2' : '_');
+  setCharAt(0, loopStates[0] ? '1' : '_');
 }
 
 void Display::clear() {

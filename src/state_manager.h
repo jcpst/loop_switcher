@@ -24,12 +24,12 @@ public:
   
   // Edit mode
   bool editModeLoopStates[4];
-  bool editModeFlashState;
-  
+  uint8_t editModeAnimFrame;
+
   // Timing
   unsigned long pcFlashStartTime;
   unsigned long channelModeStartTime;
-  unsigned long editModeFlashTime;
+  unsigned long editModeAnimTime;
   unsigned long savedDisplayStartTime;
   
   // Display state

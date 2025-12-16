@@ -137,9 +137,9 @@ void ModeController::enterEditMode() {
   for (int i = 0; i < 4; i++) {
     state.editModeLoopStates[i] = state.loopStates[i];
   }
-  state.displayState = EDIT_MODE_SHOWING;
-  state.editModeFlashTime = millis();
-  state.editModeFlashState = true;
+  state.displayState = EDIT_MODE_ANIMATED;
+  state.editModeAnimTime = millis();
+  state.editModeAnimFrame = 0;
 }
 
 void ModeController::exitEditMode() {
@@ -212,12 +212,11 @@ void ModeController::updateStateMachine() {
     }
   }
 
-  // Handle edit mode flashing
+  // Handle edit mode animation
   if (state.currentMode == EDIT_MODE) {
-    if ((now - state.editModeFlashTime) > EDIT_FLASH_INTERVAL_MS) {
-      state.editModeFlashState = !state.editModeFlashState;
-      state.displayState = state.editModeFlashState ? EDIT_MODE_SHOWING : EDIT_MODE_BLANK;
-      state.editModeFlashTime = now;
+    if ((now - state.editModeAnimTime) > EDIT_ANIM_INTERVAL_MS) {
+      state.editModeAnimFrame = (state.editModeAnimFrame + 1) % 6;
+      state.editModeAnimTime = now;
     }
   }
 

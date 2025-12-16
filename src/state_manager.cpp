@@ -1,7 +1,7 @@
 #include "state_manager.h"
 #include <EEPROM.h>
 
-StateManager::StateManager() 
+StateManager::StateManager()
   : currentMode(MANUAL_MODE),
     displayState(SHOWING_MANUAL),
     currentBank(1),
@@ -10,10 +10,10 @@ StateManager::StateManager()
     activePreset(-1),
     globalPresetActive(false),
     editModeLoopStates{false, false, false, false},
-    editModeFlashState(false),
+    editModeAnimFrame(0),
     pcFlashStartTime(0),
     channelModeStartTime(0),
-    editModeFlashTime(0),
+    editModeAnimTime(0),
     savedDisplayStartTime(0),
     flashingPC(0) {
 }

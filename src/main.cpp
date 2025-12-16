@@ -68,5 +68,6 @@ void loop() {
     state.displayState,
     state.getDisplayValue(),
     state.getDisplayLoops(),
-    state.globalPresetActive);
+    state.globalPresetActive,
+    state.editModeAnimFrame);
 }
