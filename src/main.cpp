@@ -35,9 +35,6 @@ ModeController modeController(state, switches, relays);
 
 // ===== SETUP =====
 void setup() {
-  // Built-in LED for heartbeat (shares pin with SPI CLK, but that's OK for testing)
-  pinMode(LED_BUILTIN, OUTPUT);
-
   // Initialize hardware modules
   switches.begin();
   relays.begin();
