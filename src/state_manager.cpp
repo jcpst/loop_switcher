@@ -27,6 +27,16 @@ void StateManager::initialize() {
     midiChannel = DEFAULT_MIDI_CHANNEL;
     EEPROM.write(EEPROM_CHANNEL_ADDR, midiChannel);
   }
+
+  // Check if EEPROM has been initialized
+  uint8_t initFlag = EEPROM.read(EEPROM_INIT_FLAG_ADDR);
+  if (initFlag != EEPROM_INIT_MAGIC) {
+    // First boot - initialize all presets to 0 (all loops off)
+    for (uint8_t i = 0; i < 128; i++) {
+      EEPROM.write(EEPROM_PRESETS_START_ADDR + i, 0);
+    }
+    EEPROM.write(EEPROM_INIT_FLAG_ADDR, EEPROM_INIT_MAGIC);
+  }
 }
 
 uint8_t StateManager::getDisplayValue() const {
@@ -38,4 +48,30 @@ uint8_t StateManager::getDisplayValue() const {
 
 bool* StateManager::getDisplayLoops() {
   return (currentMode == EDIT_MODE) ? editModeLoopStates : loopStates;
+}
+
+void StateManager::savePreset(uint8_t presetNumber) {
+  if (presetNumber < 1 || presetNumber > 128) return;
+
+  // Pack 4 loop states into a single byte (bits 0-3)
+  uint8_t packedState = 0;
+  for (int i = 0; i < 4; i++) {
+    if (loopStates[i]) {
+      packedState |= (1 << i);
+    }
+  }
+
+  EEPROM.write(EEPROM_PRESETS_START_ADDR + presetNumber - 1, packedState);
+}
+
+void StateManager::loadPreset(uint8_t presetNumber) {
+  if (presetNumber < 1 || presetNumber > 128) return;
+
+  // Read packed state from EEPROM
+  uint8_t packedState = EEPROM.read(EEPROM_PRESETS_START_ADDR + presetNumber - 1);
+
+  // Unpack into loop states
+  for (int i = 0; i < 4; i++) {
+    loopStates[i] = (packedState & (1 << i)) != 0;
+  }
 }

@@ -150,6 +150,10 @@ void ModeController::exitEditMode() {
   // Update relays immediately with new states
   relays.update(state.loopStates);
 
+  // Calculate preset number and save to EEPROM
+  uint8_t presetNumber = (state.currentBank * 4) + state.activePreset + 1;
+  state.savePreset(presetNumber);
+
   // Show "SAVED" message
   state.displayState = SHOWING_SAVED;
   state.savedDisplayStartTime = millis();
@@ -168,10 +172,14 @@ void ModeController::handleSingleSwitchPress(uint8_t switchIndex) {
   else if (state.currentMode == BANK_MODE) {
     // Check if pressing the same switch as the active preset
     if (state.activePreset == switchIndex && !state.globalPresetActive) {
-      // Activate global preset
+      // Activate global preset - send PC 128 (bank 32, preset 4)
       state.globalPresetActive = true;
-      state.displayState = SHOWING_BANK;
-      // Don't send MIDI, just activate global preset mode
+      sendMIDIProgramChange(128, state.midiChannel);
+
+      // Flash PC 128 on display
+      state.flashingPC = 128;
+      state.pcFlashStartTime = millis();
+      state.displayState = FLASHING_PC;
     }
     else {
       // Exit global preset if active, or just send normal PC
@@ -181,6 +189,10 @@ void ModeController::handleSingleSwitchPress(uint8_t switchIndex) {
       // Send MIDI Program Change
       uint8_t pc = (state.currentBank * 4) + switchIndex + 1;
       sendMIDIProgramChange(pc, state.midiChannel);
+
+      // Load preset from EEPROM and apply to relays
+      state.loadPreset(pc);
+      relays.update(state.loopStates);
 
       // Flash PC number on display
       state.flashingPC = pc;

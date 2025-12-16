@@ -39,6 +39,10 @@ public:
   void initialize();
   uint8_t getDisplayValue() const;
   bool* getDisplayLoops();
+
+  // EEPROM preset storage
+  void savePreset(uint8_t presetNumber);
+  void loadPreset(uint8_t presetNumber);
 };
 
 #endif

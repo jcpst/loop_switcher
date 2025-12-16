@@ -39,7 +39,12 @@ const uint16_t EDIT_ANIM_INTERVAL_MS = 150;
 const uint16_t SAVED_DISPLAY_MS = 2000;
 const uint16_t CHANNEL_TIMEOUT_MS = 5000;
 
+// EEPROM layout
 const uint8_t EEPROM_CHANNEL_ADDR = 0;
+const uint8_t EEPROM_INIT_FLAG_ADDR = 1;
+const uint8_t EEPROM_PRESETS_START_ADDR = 2;  // Presets 1-128 stored at addresses 2-129
+const uint8_t EEPROM_INIT_MAGIC = 0x42;        // Magic byte to detect first boot
+
 const uint8_t DEFAULT_MIDI_CHANNEL = 1;
 
 // ===== ENUMS =====

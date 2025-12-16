@@ -12,7 +12,7 @@ A programmable guitar effects loop switcher with MIDI control, built on the ATme
 - **MIDI Output**: Sends Program Change messages (PC 1-128) on configurable channel (1-16)
 - **7-Segment Display**: Shows current bank, MIDI channel, or program change
 - **Status LEDs**: 8 LEDs (4 relay state + 4 preset indicators) via 74HC595 shift register
-- **Global Preset Mode**: Special "all loops off" mode in Bank Mode
+- **Global Preset Mode**: Access preset 128 in any Bank
 - **Persistent Settings**: MIDI channel stored in EEPROM
 
 ## Hardware Requirements
