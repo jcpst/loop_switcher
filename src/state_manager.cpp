@@ -20,7 +20,7 @@ StateManager::StateManager()
 uint8_t StateManager::readMidiChannelFromHardware() {
   // Read 4-bit binary value from footswitch pins (used as DIP switch inputs during setup)
   // SW1=bit0, SW2=bit1, SW3=bit2, SW4=bit3
-  // Binary value 0-15 maps to MIDI channels 1-16
+  // Binary value 0-15 represents MIDI channels 0-15 (displayed as 1-16)
   uint8_t binaryValue = 0;
   
   // Read each pin - switches are active LOW with pullups
@@ -32,8 +32,8 @@ uint8_t StateManager::readMidiChannelFromHardware() {
   if (digitalRead(SW3_PIN) == LOW) binaryValue |= (1 << 2);  // Bit 2
   if (digitalRead(SW4_PIN) == LOW) binaryValue |= (1 << 3);  // Bit 3
   
-  // Convert binary value (0-15) to MIDI channel (1-16)
-  return binaryValue + 1;
+  // Return MIDI channel 0-15
+  return binaryValue;
 }
 
 void StateManager::initialize() {

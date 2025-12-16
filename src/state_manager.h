@@ -13,7 +13,7 @@ public:
   
   // Bank and MIDI
   uint8_t currentBank;
-  uint8_t midiChannel;
+  uint8_t midiChannel;  // MIDI channel 0-15 (displayed as 1-16)
   
   // Loop states
   bool loopStates[4];

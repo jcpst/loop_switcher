@@ -8,7 +8,9 @@ void initMIDI() {
 
 void sendMIDIProgramChange(uint8_t program, uint8_t channel) {
   // Program Change: 0xC0 + channel (0-15), then program number (0-127)
-  uint8_t statusByte = 0xC0 | ((channel - 1) & 0x0F);
+  // channel: MIDI channel 0-15
+  // program: Program number 1-128 (displayed), maps to MIDI 0-127
+  uint8_t statusByte = 0xC0 | (channel & 0x0F);
   uint8_t programByte = (program - 1) & 0x7F;  // PC 1-128 maps to 0-127
 
   Serial.write(statusByte);

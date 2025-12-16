@@ -243,11 +243,13 @@ Pin Mapping:
 - SW4 pin (D6): Bit 3 (MSB) - value 8
 
 Binary to MIDI Channel Mapping:
-- b0000 (0)  → MIDI Channel 1
-- b0001 (1)  → MIDI Channel 2
-- b0010 (2)  → MIDI Channel 3
+- b0000 (0)  → MIDI Channel 0 (displayed as Channel 1)
+- b0001 (1)  → MIDI Channel 1 (displayed as Channel 2)
+- b0010 (2)  → MIDI Channel 2 (displayed as Channel 3)
 - ...
-- b1111 (15) → MIDI Channel 16
+- b1111 (15) → MIDI Channel 15 (displayed as Channel 16)
+
+Note: MIDI channels are 0-15 internally (per MIDI specification), but displayed as 1-16 for user convenience.
 ```
 
 ### Reading Algorithm
@@ -262,7 +264,7 @@ uint8_t readMidiChannelFromHardware() {
   if (digitalRead(SW3_PIN) == LOW) binaryValue |= (1 << 2);
   if (digitalRead(SW4_PIN) == LOW) binaryValue |= (1 << 3);
   
-  return binaryValue + 1;  // Convert 0-15 to 1-16
+  return binaryValue;  // Returns MIDI channel 0-15
 }
 ```
 

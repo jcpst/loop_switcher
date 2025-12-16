@@ -36,12 +36,12 @@ The MIDI output channel (1-16) is set using 4 DIP switches connected to the foot
 - **SW3 pin (D5)**: Bit 2
 - **SW4 pin (D6)**: Bit 3 (MSB)
 
-The DIP switches are read during power-up/reset only. The configured channel is displayed for 1 second during startup. The 4-bit binary value maps to MIDI channels:
-- `b0000` (all switches OFF) = MIDI Channel 1
-- `b0001` (SW1 ON) = MIDI Channel 2
-- `b0010` (SW2 ON) = MIDI Channel 3
+The DIP switches are read during power-up/reset only. The configured channel is displayed for 1 second during startup (shown as 1-16). The 4-bit binary value represents MIDI channels 0-15:
+- `b0000` (all switches OFF) = MIDI Channel 0 (displayed as Channel 1)
+- `b0001` (SW1 ON) = MIDI Channel 1 (displayed as Channel 2)
+- `b0010` (SW2 ON) = MIDI Channel 2 (displayed as Channel 3)
 - ...
-- `b1111` (all switches ON) = MIDI Channel 16
+- `b1111` (all switches ON) = MIDI Channel 15 (displayed as Channel 16)
 
 **Wiring**: Each DIP switch should connect the footswitch pin to ground when ON. The internal pullup resistors ensure the pins read HIGH when switches are OFF.
 

@@ -45,8 +45,8 @@ const uint8_t EEPROM_INIT_FLAG_ADDR = 1;
 const uint8_t EEPROM_PRESETS_START_ADDR = 2;  // Presets 1-128 stored at addresses 2-129
 const uint8_t EEPROM_INIT_MAGIC = 0x42;        // Magic byte to detect first boot
 
-// Default MIDI channel (used in constructor before hardware read in initialize())
-const uint8_t DEFAULT_MIDI_CHANNEL = 1;
+// Default MIDI channel 0-15 (used in constructor before hardware read in initialize())
+const uint8_t DEFAULT_MIDI_CHANNEL = 0;
 
 // ===== ENUMS =====
 enum Mode {
