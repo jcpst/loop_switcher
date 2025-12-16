@@ -11,6 +11,7 @@ A programmable guitar effects loop switcher with MIDI control, built on the ATme
   - **Edit Mode**: Edit loop states for stored presets
 - **MIDI Output**: Sends Program Change messages (PC 1-128) on configurable channel (1-16)
 - **7-Segment Display**: Shows current bank, MIDI channel, or program change
+- **Status LEDs**: 8 LEDs (4 relay state + 4 preset indicators) via 74HC595 shift register
 - **Global Preset Mode**: Special "all loops off" mode in Bank Mode
 - **Persistent Settings**: MIDI channel stored in EEPROM
 
@@ -19,12 +20,18 @@ A programmable guitar effects loop switcher with MIDI control, built on the ATme
 ### Components
 - ATmega328-based board (Arduino Uno or Nano)
 - 4x momentary footswitches (active LOW with pullups)
-- MAX7219 7-segment display driver with 3-digit display
+- MAX7219 7-segment display driver with 8-digit display
 - 4x DPDT relays for audio switching
+- 74HC595 shift register + 8x LEDs (status indicators)
 - MIDI output circuit (hardware UART)
 
 ### Pin Configuration
 See `src/config.h` for detailed pin assignments
+
+### LED Status Indicators
+- **4 Relay LEDs**: Show currently applied loop states (what's driving the relays)
+- **4 Preset LEDs**: Show which preset is selected (OFF in Manual Mode or when Global Preset active)
+- Configure `LED_ACTIVE_LOW` in `config.h` based on wiring (source vs sink current)
 
 ## Controls
 

@@ -17,6 +17,7 @@
 #include "relays.h"
 #include "state_manager.h"
 #include "mode_controller.h"
+#include "led_controller.h"
 
 // ===== PIN ARRAYS =====
 const uint8_t switchPins[4] = {SW1_PIN, SW2_PIN, SW3_PIN, SW4_PIN};
@@ -26,6 +27,7 @@ const uint8_t relayPins[4] = {RELAY1_PIN, RELAY2_PIN, RELAY3_PIN, RELAY4_PIN};
 Display display(MAX_DIN_PIN, MAX_CLK_PIN, MAX_CS_PIN);
 SwitchHandler switches(switchPins, DEBOUNCE_MS, SIMULTANEOUS_WINDOW_MS, LONG_PRESS_MS);
 RelayController relays(relayPins);
+LedController leds(SR_DATA_PIN, SR_CLOCK_PIN, SR_LATCH_PIN, LED_ACTIVE_LOW);
 
 // ===== STATE AND CONTROLLER =====
 StateManager state;
@@ -40,13 +42,15 @@ void setup() {
   switches.begin();
   relays.begin();
   display.begin();
+  leds.begin();
   initMIDI();
 
   // Initialize state (loads MIDI channel from EEPROM)
   state.initialize();
 
-  // Update initial display
+  // Update initial display and LEDs
   display.update(state.displayState, state.getDisplayValue(), state.loopStates, state.globalPresetActive);
+  leds.update(state.loopStates, state.currentMode, state.activePreset, state.globalPresetActive);
 }
 
 // ===== MAIN LOOP =====
@@ -55,13 +59,18 @@ void loop() {
   modeController.detectSwitchPatterns();
   modeController.updateStateMachine();
 
-  // Update relays
-  if (state.currentMode == MANUAL_MODE) {
-    relays.update(state.loopStates);
-  } else if (state.currentMode == EDIT_MODE) {
-    // In edit mode, update relays with edit buffer states
+  // Determine which loop states are currently applied to relays
+  const bool* appliedLoopStates;
+  if (state.currentMode == EDIT_MODE) {
+    appliedLoopStates = state.editModeLoopStates;
     relays.update(state.editModeLoopStates);
+  } else {
+    appliedLoopStates = state.loopStates;
+    relays.update(state.loopStates);
   }
+
+  // Update LEDs with applied loop states
+  leds.update(appliedLoopStates, state.currentMode, state.activePreset, state.globalPresetActive);
 
   // Update display
   display.update(

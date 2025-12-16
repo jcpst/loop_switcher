@@ -21,6 +21,12 @@ const uint8_t MAX_DIN_PIN = 11;
 const uint8_t MAX_CLK_PIN = 13;
 const uint8_t MAX_CS_PIN = 12;
 
+// 74HC595 shift register for status LEDs
+const uint8_t SR_DATA_PIN = A0;   // SER / DS - Serial data input
+const uint8_t SR_CLOCK_PIN = A1;  // SHCP / SRCLK - Shift register clock
+const uint8_t SR_LATCH_PIN = A2;  // STCP / RCLK - Storage register clock (latch)
+const bool LED_ACTIVE_LOW = false; // Set true if LEDs wired: +5V -> resistor -> LED -> 74HC595 output
+
 // MIDI uses hardware UART TX (pin 1 on Uno/Nano)
 
 // ===== CONSTANTS =====
