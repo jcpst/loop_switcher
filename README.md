@@ -36,7 +36,7 @@ The MIDI output channel (1-16) is set using 4 DIP switches connected to the foot
 - **SW3 pin (D5)**: Bit 2
 - **SW4 pin (D6)**: Bit 3 (MSB)
 
-The DIP switches are read during power-up/reset only. The 4-bit binary value maps to MIDI channels:
+The DIP switches are read during power-up/reset only. The configured channel is displayed for 1 second during startup. The 4-bit binary value maps to MIDI channels:
 - `b0000` (all switches OFF) = MIDI Channel 1
 - `b0001` (SW1 ON) = MIDI Channel 2
 - `b0010` (SW2 ON) = MIDI Channel 3
@@ -86,6 +86,7 @@ The DIP switches are read during power-up/reset only. The 4-bit binary value map
 
 | Display | Meaning |
 |---------|---------|
+| Channel number (1-16) | MIDI channel during startup (1s) |
 | Bank number (1-32) | Current bank in Bank Mode |
 | Flashing PC number | Program Change being sent |
 | Flashing "Edit" | Edit Mode active |
