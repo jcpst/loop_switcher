@@ -209,7 +209,11 @@ void ModeController::enterChannelSetMode() {
 }
 
 void ModeController::exitChannelSetMode() {
-  EEPROM.write(EEPROM_CHANNEL_ADDR, state.midiChannel);
+  // Only write to EEPROM if the channel has changed (reduces wear)
+  uint8_t storedChannel = EEPROM.read(EEPROM_CHANNEL_ADDR);
+  if (storedChannel != state.midiChannel) {
+    EEPROM.write(EEPROM_CHANNEL_ADDR, state.midiChannel);
+  }
   state.currentMode = BANK_MODE;  // Return to bank mode
   state.displayState = SHOWING_BANK;
 }

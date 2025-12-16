@@ -24,6 +24,7 @@ void StateManager::initialize() {
   if (storedChannel >= 1 && storedChannel <= 16) {
     midiChannel = storedChannel;
   } else {
+    // Invalid channel - set to default and write to EEPROM
     midiChannel = DEFAULT_MIDI_CHANNEL;
     EEPROM.write(EEPROM_CHANNEL_ADDR, midiChannel);
   }
@@ -61,7 +62,11 @@ void StateManager::savePreset(uint8_t presetNumber) {
     }
   }
 
-  EEPROM.write(EEPROM_PRESETS_START_ADDR + presetNumber - 1, packedState);
+  // Only write to EEPROM if the value has changed (reduces wear)
+  uint8_t currentValue = EEPROM.read(EEPROM_PRESETS_START_ADDR + presetNumber - 1);
+  if (currentValue != packedState) {
+    EEPROM.write(EEPROM_PRESETS_START_ADDR + presetNumber - 1, packedState);
+  }
 }
 
 void StateManager::loadPreset(uint8_t presetNumber) {
