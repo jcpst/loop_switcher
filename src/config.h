@@ -37,7 +37,6 @@ const uint16_t EDIT_MODE_LONG_PRESS_MS = 2000;
 const uint16_t PC_FLASH_MS = 1000;
 const uint16_t EDIT_ANIM_INTERVAL_MS = 150;
 const uint16_t SAVED_DISPLAY_MS = 2000;
-const uint16_t CHANNEL_TIMEOUT_MS = 5000;
 
 // EEPROM layout
 const uint8_t EEPROM_CHANNEL_ADDR = 0;
@@ -51,7 +50,6 @@ const uint8_t DEFAULT_MIDI_CHANNEL = 1;
 enum Mode {
   MANUAL_MODE,
   BANK_MODE,
-  CHANNEL_SET_MODE,
   EDIT_MODE
 };
 

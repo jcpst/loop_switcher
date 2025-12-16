@@ -28,7 +28,6 @@ public:
 
   // Timing
   unsigned long pcFlashStartTime;
-  unsigned long channelModeStartTime;
   unsigned long editModeAnimTime;
   unsigned long savedDisplayStartTime;
   
@@ -43,6 +42,9 @@ public:
   // EEPROM preset storage
   void savePreset(uint8_t presetNumber);
   void loadPreset(uint8_t presetNumber);
+
+  // Read MIDI channel from DIP switches on footswitch pins
+  uint8_t readMidiChannelFromHardware();
 };
 
 #endif

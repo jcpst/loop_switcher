@@ -36,13 +36,13 @@ ModeController modeController(state, switches, relays);
 // ===== SETUP =====
 void setup() {
   // Initialize hardware modules
-  switches.begin();
+  switches.begin();  // Must be called first - enables pullups for DIP switch reading
   relays.begin();
   display.begin();
   leds.begin();
   initMIDI();
 
-  // Initialize state (loads MIDI channel from EEPROM)
+  // Initialize state (reads MIDI channel from DIP switches on footswitch pins)
   state.initialize();
 
   // Update initial display and LEDs

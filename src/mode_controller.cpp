@@ -1,24 +1,10 @@
 #include "mode_controller.h"
-#include <EEPROM.h>
 
 ModeController::ModeController(StateManager& state, SwitchHandler& switches, RelayController& relays)
   : state(state), switches(switches), relays(relays) {
 }
 
 void ModeController::detectSwitchPatterns() {
-  unsigned long now = millis();
-
-  // Check for long press of outer switches (mode change to channel set)
-  if (switches.isLongPress(0, 3)) {
-    enterChannelSetMode();
-    return;
-  }
-
-  // Don't process other patterns while holding outer switches
-  if (switches.isPressed(0) && switches.isPressed(3)) {
-    return;
-  }
-
   // Check for 2-second long press of center switches (edit mode)
   // Only allow in BANK_MODE when a preset is active
   if (state.currentMode == BANK_MODE && state.activePreset != -1) {
@@ -84,40 +70,6 @@ void ModeController::detectSwitchPatterns() {
     state.globalPresetActive = false;
     state.activePreset = -1;
     switches.clearRecentPresses();
-    return;
-  }
-
-  // In channel set mode
-  if (state.currentMode == CHANNEL_SET_MODE) {
-    // Center switches: exit
-    if (sw2Pressed && sw3Pressed) {
-      exitChannelSetMode();
-      switches.clearRecentPresses();
-      return;
-    }
-
-    // Left switches: decrease channel
-    if (sw1Pressed && sw2Pressed) {
-      if (state.midiChannel == 1) state.midiChannel = 16;
-      else state.midiChannel--;
-      state.channelModeStartTime = now;
-      switches.clearRecentPresses();
-      return;
-    }
-
-    // Right switches: increase channel
-    if (sw3Pressed && sw4Pressed) {
-      if (state.midiChannel == 16) state.midiChannel = 1;
-      else state.midiChannel++;
-      state.channelModeStartTime = now;
-      switches.clearRecentPresses();
-      return;
-    }
-
-    // Timeout check
-    if ((now - state.channelModeStartTime) > CHANNEL_TIMEOUT_MS) {
-      exitChannelSetMode();
-    }
     return;
   }
 
@@ -200,22 +152,6 @@ void ModeController::handleSingleSwitchPress(uint8_t switchIndex) {
       state.displayState = FLASHING_PC;
     }
   }
-}
-
-void ModeController::enterChannelSetMode() {
-  state.currentMode = CHANNEL_SET_MODE;
-  state.displayState = SHOWING_CHANNEL;
-  state.channelModeStartTime = millis();
-}
-
-void ModeController::exitChannelSetMode() {
-  // Only write to EEPROM if the channel has changed (reduces wear)
-  uint8_t storedChannel = EEPROM.read(EEPROM_CHANNEL_ADDR);
-  if (storedChannel != state.midiChannel) {
-    EEPROM.write(EEPROM_CHANNEL_ADDR, state.midiChannel);
-  }
-  state.currentMode = BANK_MODE;  // Return to bank mode
-  state.displayState = SHOWING_BANK;
 }
 
 void ModeController::updateStateMachine() {

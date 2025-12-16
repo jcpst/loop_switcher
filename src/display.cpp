@@ -28,10 +28,6 @@ void Display::update(DisplayState state, uint8_t value, bool loopStates[4], bool
       displaySaved();
       break;
 
-    case SHOWING_CHANNEL:
-      displayChannel(value);
-      break;
-
     case EDIT_MODE_ANIMATED:
       displayEdit(animFrame);
       break;
@@ -55,21 +51,6 @@ void Display::displayBankNumber(uint8_t num, bool globalPreset) {
   if (globalPreset) {
     lc.setChar(0, 3, '-', false);
   }
-}
-
-void Display::displayChannel(uint8_t ch) {
-  clear();
-
-  setCharAt(7, 'C');
-  setCharAt(6, 'h');
-  setCharAt(5, 'a');
-  setCharAt(4, 'n');
-
-  uint8_t tens = ch / 10;
-  uint8_t ones = ch % 10;
-
-  lc.setDigit(0, 1, tens, false);
-  lc.setDigit(0, 0, ones, false);
 }
 
 void Display::displayEdit(uint8_t animFrame) {

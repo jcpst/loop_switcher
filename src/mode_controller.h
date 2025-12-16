@@ -21,8 +21,6 @@ private:
   SwitchHandler& switches;
   RelayController& relays;
   
-  void enterChannelSetMode();
-  void exitChannelSetMode();
   void enterEditMode();
   void exitEditMode();
 };

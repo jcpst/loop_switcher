@@ -9,17 +9,18 @@ A programmable guitar effects loop switcher with MIDI control, built on the ATme
   - **Manual Mode**: Direct loop on/off control via footswitches
   - **Bank Mode**: 32 banks x 4 presets = 128 MIDI program changes
   - **Edit Mode**: Edit loop states for stored presets
-- **MIDI Output**: Sends Program Change messages (PC 1-128) on configurable channel (1-16)
-- **7-Segment Display**: Shows current bank, MIDI channel, or program change
+- **MIDI Output**: Sends Program Change messages (PC 1-128) on hardware-configurable channel (1-16)
+- **7-Segment Display**: Shows current bank or program change
 - **Status LEDs**: 8 LEDs (4 relay state + 4 preset indicators) via 74HC595 shift register
 - **Global Preset Mode**: Access preset 128 in any Bank
-- **Persistent Settings**: MIDI channel stored in EEPROM
+- **Hardware MIDI Channel Selection**: Set MIDI channel (1-16) using 4 DIP switches during power-up
 
 ## Hardware Requirements
 
 ### Components
 - ATmega328-based board (Arduino Uno or Nano)
 - 4x momentary footswitches (active LOW with pullups)
+- 4x DIP switches (for MIDI channel selection, shares footswitch pins)
 - MAX7219 7-segment display driver with 8-digit display
 - 4x DPDT relays for audio switching
 - 74HC595 shift register + 8x LEDs (status indicators)
@@ -27,6 +28,24 @@ A programmable guitar effects loop switcher with MIDI control, built on the ATme
 
 ### Pin Configuration
 See `src/config.h` for detailed pin assignments
+
+### MIDI Channel Configuration
+The MIDI output channel (1-16) is set using 4 DIP switches connected to the footswitch pins:
+- **SW1 pin (D2)**: Bit 0 (LSB)
+- **SW2 pin (D4)**: Bit 1
+- **SW3 pin (D5)**: Bit 2
+- **SW4 pin (D6)**: Bit 3 (MSB)
+
+The DIP switches are read during power-up/reset only. The 4-bit binary value maps to MIDI channels:
+- `b0000` (all switches OFF) = MIDI Channel 1
+- `b0001` (SW1 ON) = MIDI Channel 2
+- `b0010` (SW2 ON) = MIDI Channel 3
+- ...
+- `b1111` (all switches ON) = MIDI Channel 16
+
+**Wiring**: Each DIP switch should connect the footswitch pin to ground when ON. The internal pullup resistors ensure the pins read HIGH when switches are OFF.
+
+**Important**: There is no conflict between DIP switches and footswitches because DIP switches are only read during setup, before the main loop begins processing footswitch presses.
 
 ### LED Status Indicators
 - **4 Relay LEDs**: Show currently applied loop states (what's driving the relays)
@@ -39,11 +58,10 @@ See `src/config.h` for detailed pin assignments
 
 | Switches | Action | Mode |
 |----------|--------|------|
-| SW1 (long press) + SW4 (long press) | Enter MIDI channel setup | Any |
 | SW2 + SW3 | Toggle Manual/Bank mode | Any |
 | SW2 (2s hold) + SW3 (2s hold) | Enter/Exit Edit Mode | Bank (after preset selected) |
-| SW1 + SW2 | Bank down / Channel down | Bank / Channel Set |
-| SW3 + SW4 | Bank up / Channel up | Bank / Channel Set |
+| SW1 + SW2 | Bank down | Bank |
+| SW3 + SW4 | Bank up | Bank |
 | Single switch | Toggle loop / Send PC / Toggle loop in edit | Manual / Bank / Edit |
 
 ### Manual Mode
@@ -64,18 +82,11 @@ See `src/config.h` for detailed pin assignments
 - Hold SW2+SW3 for 2 seconds to save and exit
 - Display shows "SAVEd" for 2 seconds, then returns to Bank Mode
 
-### Channel Set Mode
-- Long press SW1+SW4 to enter
-- Use SW1+SW2 / SW3+SW4 to adjust MIDI channel (1-16)
-- Press SW2+SW3 to save and exit
-- Auto-exits after timeout
-
 ## Display States
 
 | Display | Meaning |
 |---------|---------|
 | Bank number (1-32) | Current bank in Bank Mode |
-| Channel number (1-16) | MIDI channel in Channel Set Mode |
 | Flashing PC number | Program Change being sent |
 | Flashing "Edit" | Edit Mode active |
 | "SAVEd" | Preset changes saved |
