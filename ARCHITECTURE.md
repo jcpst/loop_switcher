@@ -155,7 +155,7 @@ Switch Press Detection:
 
 MIDI Output:
   Decision → sendMIDI() → Serial.write() → TX
-  Total: <1ms (excellent for MIDI)
+  Total: <1ms (suitable for MIDI)
 
 Relay Switching:
   Command → digitalWrite() → Relay coil energize
