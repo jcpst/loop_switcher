@@ -13,32 +13,38 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Cache pip
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+    # TODO: Add PlatformIO build steps here
+    # Uncomment and configure the following steps once ready:
+    #
+    # - name: Cache pip
+    #   uses: actions/cache@v4
+    #   with:
+    #     path: ~/.cache/pip
+    #     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-pip-
+    # 
+    # - name: Cache PlatformIO
+    #   uses: actions/cache@v4
+    #   with:
+    #     path: ~/.platformio
+    #     key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+    # 
+    # - name: Set up Python
+    #   uses: actions/setup-python@v5
+    #   with:
+    #     python-version: '3.11'
+    # 
+    # - name: Install PlatformIO
+    #   run: |
+    #     python -m pip install --upgrade pip
+    #     pip install --upgrade platformio
+    # 
+    # - name: Build project (uno)
+    #   run: pio run -e uno
+    # 
+    # - name: Build project (nano)
+    #   run: pio run -e nano
     
-    - name: Cache PlatformIO
-      uses: actions/cache@v4
-      with:
-        path: ~/.platformio
-        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-    
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    
-    - name: Install PlatformIO
-      run: |
-        python -m pip install --upgrade pip
-        pip install --upgrade platformio
-    
-    - name: Build project (uno)
-      run: pio run -e uno
-    
-    - name: Build project (nano)
-      run: pio run -e nano
+    - name: Placeholder
+      run: echo "PlatformIO build steps will be added here"
