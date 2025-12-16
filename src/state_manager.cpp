@@ -24,11 +24,9 @@ void StateManager::initialize() {
   if (storedChannel >= 1 && storedChannel <= 16) {
     midiChannel = storedChannel;
   } else {
+    // Invalid channel - set to default and write to EEPROM
     midiChannel = DEFAULT_MIDI_CHANNEL;
-    // Only write if the stored value is actually different (reduces wear)
-    if (storedChannel != midiChannel) {
-      EEPROM.write(EEPROM_CHANNEL_ADDR, midiChannel);
-    }
+    EEPROM.write(EEPROM_CHANNEL_ADDR, midiChannel);
   }
 
   // Check if EEPROM has been initialized
