@@ -151,7 +151,7 @@ void ModeController::exitEditMode() {
   relays.update(state.loopStates);
 
   // Calculate preset number and save to EEPROM
-  uint8_t presetNumber = (state.currentBank * 4) + state.activePreset + 1;
+  uint8_t presetNumber = ((state.currentBank - 1) * 4) + state.activePreset + 1;
   state.savePreset(presetNumber);
 
   // Show "SAVED" message
@@ -187,7 +187,7 @@ void ModeController::handleSingleSwitchPress(uint8_t switchIndex) {
       state.activePreset = switchIndex;
 
       // Send MIDI Program Change
-      uint8_t pc = (state.currentBank * 4) + switchIndex + 1;
+      uint8_t pc = ((state.currentBank - 1) * 4) + switchIndex + 1;
       sendMIDIProgramChange(pc, state.midiChannel);
 
       // Load preset from EEPROM and apply to relays
