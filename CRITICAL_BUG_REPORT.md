@@ -1,30 +1,39 @@
-# 🔴 CRITICAL BUG REPORT
+# ✅ CRITICAL BUG REPORT - FIXED
 
 **Date:** December 16, 2025  
 **Severity:** CRITICAL - Incorrect MIDI Output  
-**Status:** UNPATCHED  
+**Status:** ✅ **FIXED** - Merged to main branch  
 
 ---
 
 ## Bug Summary
 
-The MIDI Program Change calculation is **off by 4**, causing all Program Change messages to be 4 numbers higher than intended. This means Bank 1 sends PC 5-8 instead of PC 1-4, and Bank 32 attempts to send PC 129-132 (which overflow to PC 1-4 due to MIDI limits).
+**This bug has been fixed and merged to the main branch.**
+
+The MIDI Program Change calculation was **off by 4**, causing all Program Change messages to be 4 numbers higher than intended. This meant Bank 1 sent PC 5-8 instead of PC 1-4, and Bank 32 attempted to send PC 129-132 (which overflow to PC 1-4 due to MIDI limits).
 
 ---
 
 ## Impact
 
-### Current Behavior:
-- **Bank 1** sends **PC 5, 6, 7, 8** (should be 1, 2, 3, 4)
-- **Bank 2** sends **PC 9, 10, 11, 12** (should be 5, 6, 7, 8)
-- **Bank 32** sends **PC 129, 130, 131, 132** → wraps to **PC 1, 2, 3, 4** (should be 125, 126, 127, 128)
+### Previous Behavior (Bug):
+- **Bank 1** sent **PC 5, 6, 7, 8** (should be 1, 2, 3, 4)
+- **Bank 2** sent **PC 9, 10, 11, 12** (should be 5, 6, 7, 8)
+- **Bank 32** sent **PC 129, 130, 131, 132** → wraps to **PC 1, 2, 3, 4** (should be 125, 126, 127, 128)
 
-### Consequences:
-1. ❌ **MIDI devices receive wrong program numbers**
-2. ❌ **Bank 32 wraps around due to MIDI 7-bit limit (0-127)**
-3. ❌ **EEPROM presets are stored at wrong addresses**
-4. ❌ **Users cannot access the first 4 presets via MIDI**
-5. ❌ **Banks 1-31 never send correct PC numbers**
+### Fixed Behavior (Current):
+- ✅ **Bank 1** now sends **PC 1, 2, 3, 4**
+- ✅ **Bank 2** now sends **PC 5, 6, 7, 8**
+- ✅ **Bank 32** now sends **PC 125, 126, 127, 128**
+
+### Consequences (Before Fix):
+1. ❌ **MIDI devices received wrong program numbers**
+2. ❌ **Bank 32 wrapped around due to MIDI 7-bit limit (0-127)**
+3. ❌ **EEPROM presets were stored at wrong addresses**
+4. ❌ **Users could not access the first 4 presets via MIDI**
+5. ❌ **Banks 1-31 never sent correct PC numbers**
+
+**All issues resolved in the current main branch.**
 
 ---
 
@@ -63,90 +72,87 @@ EXPECTED:         pc = 128                      ✓
 
 ---
 
-## The Fix
+## The Fix (Applied)
 
-### Option 1: Fix the Formula (RECOMMENDED)
+### ✅ Fix Applied - Formula Corrected
 
 **File:** `src/mode_controller.cpp`  
-**Line:** 190
+**Lines:** 154, 190
+
+The fix has been implemented and merged to the main branch:
 
 ```cpp
 // BEFORE (incorrect):
 uint8_t pc = (state.currentBank * 4) + switchIndex + 1;
 
-// AFTER (correct):
+// AFTER (correct - now in main):
 uint8_t pc = ((state.currentBank - 1) * 4) + switchIndex + 1;
 ```
 
-Also fix line 154 in the same file:
-```cpp
-// BEFORE (incorrect):
-uint8_t presetNumber = (state.currentBank * 4) + state.activePreset + 1;
+Both instances in the file were fixed:
+- Line ~154: `presetNumber` calculation in `exitEditMode()`
+- Line ~190: `pc` calculation in `handleSingleSwitchPress()`
 
-// AFTER (correct):
-uint8_t presetNumber = ((state.currentBank - 1) * 4) + state.activePreset + 1;
-```
-
-### Option 2: Change Bank Numbering (NOT RECOMMENDED)
-
-Change `currentBank` to be 0-based (0-31) internally and only display as 1-32. This would require changes in multiple places and affect bank up/down logic.
+**Status:** Both fixes merged via PR #4
 
 ---
 
-## Verification Test Cases
+## ✅ Verification Test Cases
 
-After applying the fix, verify these calculations:
+These test cases now pass with the fix in main:
 
-| Bank | Switch | Expected PC | Current (Wrong) | Fixed |
-|------|--------|-------------|-----------------|-------|
-| 1    | 1      | 1           | 5               | 1 ✓   |
-| 1    | 2      | 2           | 6               | 2 ✓   |
-| 1    | 3      | 3           | 7               | 3 ✓   |
-| 1    | 4      | 4           | 8               | 4 ✓   |
-| 2    | 1      | 5           | 9               | 5 ✓   |
-| 16   | 1      | 61          | 65              | 61 ✓  |
-| 31   | 4      | 124         | 128             | 124 ✓ |
-| 32   | 1      | 125         | 129 (→1)        | 125 ✓ |
-| 32   | 4      | 128         | 132 (→4)        | 128 ✓ |
+| Bank | Switch | Expected PC | Before Fix | After Fix |
+|------|--------|-------------|------------|-----------|
+| 1    | 1      | 1           | 5 ❌       | 1 ✅      |
+| 1    | 2      | 2           | 6 ❌       | 2 ✅      |
+| 1    | 3      | 3           | 7 ❌       | 3 ✅      |
+| 1    | 4      | 4           | 8 ❌       | 4 ✅      |
+| 2    | 1      | 5           | 9 ❌       | 5 ✅      |
+| 16   | 1      | 61          | 65 ❌      | 61 ✅     |
+| 31   | 4      | 124         | 128 ❌     | 124 ✅    |
+| 32   | 1      | 125         | 129 (→1) ❌ | 125 ✅    |
+| 32   | 4      | 128         | 132 (→4) ❌ | 128 ✅    |
 
 ---
 
-## Global Preset Bug
+## ✅ Global Preset - Verified
 
-**File:** `src/mode_controller.cpp`  
-**Line:** 177
+**File:** `src/mode_controller.cpp`
 
 ```cpp
-// Global preset always sends PC 128 - this is CORRECT
+// Global preset always sends PC 128 - this was CORRECT from the start
 sendMIDIProgramChange(128, state.midiChannel);
 ```
 
-This is hard-coded correctly, but it's inconsistent with the buggy formula. After fixing the main calculation, verify that double-pressing still sends PC 128.
+The global preset was hard-coded correctly and remains unchanged. Double-pressing still sends PC 128 as intended.
 
 ---
 
-## EEPROM Impact
+## ✅ EEPROM Impact - Fixed
 
-The bug also affects EEPROM storage! 
+The bug also affected EEPROM storage, but this has been resolved with the fix.
 
 **File:** `src/mode_controller.cpp`  
-**Line:** 154
+**Line:** ~154
 
 ```cpp
-uint8_t presetNumber = (state.currentBank * 4) + state.activePreset + 1;
+// Now corrected in main:
+uint8_t presetNumber = ((state.currentBank - 1) * 4) + state.activePreset + 1;
 state.savePreset(presetNumber);
 ```
 
-### Current Behavior:
-- Bank 1 presets are saved at EEPROM addresses **6-9** instead of **2-5**
-- Bank 32 presets are saved at addresses **130-133** instead of **129-132**
-- Addresses **132-133 are OUTSIDE the allocated EEPROM space** (131 is max)
+### Before Fix:
+- Bank 1 presets were saved at EEPROM addresses **6-9** instead of **2-5**
+- Bank 32 presets were saved at addresses **130-133** instead of **129-132**
+- Addresses **132-133 were OUTSIDE the allocated EEPROM space** (131 is max)
 
-### Consequences:
-1. ❌ **EEPROM addresses 2-5 are never used** (first 4 presets unreachable)
-2. ❌ **Bank 32 writes corrupt data outside bounds**
-3. ❌ **Potential memory corruption on ATmega328**
-4. ❌ **Users' saved presets are at wrong locations**
+### After Fix:
+- ✅ Bank 1 presets now saved at correct addresses **2-5**
+- ✅ Bank 32 presets now saved at correct addresses **129-132**
+- ✅ All addresses within allocated EEPROM space
+
+### Consequences (Resolved):
+All issues have been fixed with the corrected formula.
 
 ---
 
@@ -227,40 +233,9 @@ Or more clearly:
 
 ## Priority
 
-**🔴 CRITICAL - FIX IMMEDIATELY**
+**✅ FIXED - MERGED TO MAIN**
 
-This bug makes the device send wrong MIDI messages and corrupts EEPROM. It should be fixed before any production use or sharing with other builders.
-
----
-
-## Patch File
-
-Create this patch and apply with `git apply`:
-
-```diff
-diff --git a/src/mode_controller.cpp b/src/mode_controller.cpp
-index XXXXXXX..YYYYYYY 100644
---- a/src/mode_controller.cpp
-+++ b/src/mode_controller.cpp
-@@ -151,7 +151,7 @@ void ModeController::exitEditMode() {
-   relays.update(state.loopStates);
- 
-   // Calculate preset number and save to EEPROM
--  uint8_t presetNumber = (state.currentBank * 4) + state.activePreset + 1;
-+  uint8_t presetNumber = ((state.currentBank - 1) * 4) + state.activePreset + 1;
-   state.savePreset(presetNumber);
- 
-   // Show "SAVED" message
-@@ -187,7 +187,7 @@ void ModeController::handleSingleSwitchPress(uint8_t switchIndex) {
-       state.activePreset = switchIndex;
- 
-       // Send MIDI Program Change
--      uint8_t pc = (state.currentBank * 4) + switchIndex + 1;
-+      uint8_t pc = ((state.currentBank - 1) * 4) + switchIndex + 1;
-       sendMIDIProgramChange(pc, state.midiChannel);
- 
-       // Load preset from EEPROM and apply to relays
-```
+This bug has been fixed and merged to the main branch via PR #4. The device now sends correct MIDI messages and stores presets at the correct EEPROM addresses.
 
 ---
 
