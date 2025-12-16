@@ -45,6 +45,10 @@ void setup() {
   // Initialize state (reads MIDI channel from DIP switches on footswitch pins)
   state.initialize();
 
+  // Show configured MIDI channel on display
+  display.displayChannel(state.midiChannel);
+  delay(CHANNEL_DISPLAY_MS);
+
   // Update initial display and LEDs
   display.update(state.displayState, state.getDisplayValue(), state.loopStates, state.globalPresetActive);
   leds.update(state.loopStates, state.currentMode, state.activePreset, state.globalPresetActive);

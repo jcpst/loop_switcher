@@ -53,6 +53,21 @@ void Display::displayBankNumber(uint8_t num, bool globalPreset) {
   }
 }
 
+void Display::displayChannel(uint8_t ch) {
+  clear();
+
+  setCharAt(7, 'C');
+  setCharAt(6, 'h');
+  setCharAt(5, 'a');
+  setCharAt(4, 'n');
+
+  uint8_t tens = ch / 10;
+  uint8_t ones = ch % 10;
+
+  lc.setDigit(0, 1, tens, false);
+  lc.setDigit(0, 0, ones, false);
+}
+
 void Display::displayEdit(uint8_t animFrame) {
   // Display "Edit" with scrolling decimal animation (E->d->i->t)
   clear();

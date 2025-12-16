@@ -19,6 +19,7 @@ public:
   void begin();
   void update(DisplayState state, uint8_t value, bool loopStates[4], bool globalPreset = false, uint8_t animFrame = 0);
   void displayBankNumber(uint8_t num, bool globalPreset = false);
+  void displayChannel(uint8_t ch);
   void displayManualStatus(bool loopStates[4]);
   void displayEdit(uint8_t animFrame);
   void displaySaved();
