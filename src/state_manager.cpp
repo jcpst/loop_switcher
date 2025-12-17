@@ -65,7 +65,7 @@ bool* StateManager::getDisplayLoops() {
 void StateManager::savePreset(uint8_t presetNumber) {
   if (presetNumber < 1 || presetNumber > TOTAL_PRESETS) return;
 
-  // Pack loop states into a single byte (bits 0-3)
+  // Pack loop states into a single byte (bits 0-(NUM_LOOPS-1))
   uint8_t packedState = 0;
   for (int i = 0; i < NUM_LOOPS; i++) {
     if (loopStates[i]) {

@@ -124,7 +124,7 @@ void ModeController::handleSingleSwitchPress(uint8_t switchIndex) {
   else if (state.currentMode == BANK_MODE) {
     // Check if pressing the same switch as the active preset
     if (state.activePreset == switchIndex && !state.globalPresetActive) {
-      // Activate global preset - send PC TOTAL_PRESETS (bank NUM_BANKS, preset PRESETS_PER_BANK)
+      // Activate global preset - send PC TOTAL_PRESETS (calculated as NUM_BANKS * PRESETS_PER_BANK)
       state.globalPresetActive = true;
       sendMIDIProgramChange(TOTAL_PRESETS, state.midiChannel);
 
