@@ -27,7 +27,16 @@ public:
 
 private:
   LedControl lc;
+  
+  // Display buffers to track current state
+  uint8_t digitBuffer[8];      // Current digit values on display
+  bool decimalBuffer[8];       // Current decimal point states
+  bool bufferInitialized;      // Track if buffer has been initialized
+  
   void setCharAt(uint8_t position, char c);
+  void setCharAtBuffered(uint8_t position, char c, bool dp);
+  void setDigitAtBuffered(uint8_t position, uint8_t digit, bool dp);
+  void clearBuffered();
 };
 
 #endif
