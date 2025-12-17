@@ -211,6 +211,8 @@ GLOBAL_CONFIG_MODE is a system-wide configuration interface for all global setti
 - **Enter**: From any mode (except during other long-press operations), hold SW1+SW4 for 2 seconds
 - **Exit**: Hold SW1+SW4 for 2 seconds (saves and returns to previous mode)
 
+**Important Implementation Note**: When entering GLOBAL_CONFIG_MODE from an editing mode (EDIT_MODE or CC_EDIT_MODE), the `previousMode` variable must be set to the parent mode (BANK_MODE or CC_MODE), not the edit mode itself. This prevents returning to a potentially invalid edit state after exiting global configuration.
+
 #### Navigation
 
 In GLOBAL_CONFIG_MODE:
@@ -531,7 +533,7 @@ const uint8_t EEPROM_CC_ENABLED_ADDR = 0x82;
 const uint8_t EEPROM_CC_CONFIG_START = 0x83;     // Start of CC switch configs
 const uint8_t EEPROM_CC_CONFIG_SIZE = 3;         // Bytes per switch (number, value, behavior)
 const uint8_t EEPROM_CC_PRESETS_START = 0x8F;    // Start of CC preset states (0x8F)
-const uint16_t EEPROM_CC_PRESETS_END = 0x10E;    // End of CC preset states (0x10E = 0x8F + 128 - 1)
+const uint16_t EEPROM_CC_PRESETS_END = 0x10E;    // End of CC preset states (0x8F + 127 = 0x10E)
 
 // Default values
 const uint8_t DEFAULT_CC_ENABLED = 0;            // OFF by default
@@ -753,9 +755,10 @@ public:
   // Global configuration
   uint8_t globalConfigItem;
   Mode previousMode;  // For returning from GLOBAL_CONFIG_MODE
-                      // Note: If entering GLOBAL_CONFIG_MODE from an editing mode
-                      // (EDIT_MODE or CC_EDIT_MODE), previousMode should be set to
-                      // the parent mode (BANK_MODE or CC_MODE) not the edit mode
+                      // CRITICAL: If entering GLOBAL_CONFIG_MODE from an editing mode
+                      // (EDIT_MODE or CC_EDIT_MODE), previousMode MUST be set to
+                      // the parent mode (BANK_MODE or CC_MODE) not the edit mode,
+                      // to prevent returning to a potentially invalid edit state
   
   // CC Edit Mode
   bool ccEditModeStates[4];  // Editing CC toggle states for preset
