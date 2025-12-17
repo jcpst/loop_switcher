@@ -56,12 +56,22 @@ void setup() {
 
 // ===== MAIN LOOP =====
 void loop() {
+  static unsigned long lastUpdate = 0;
+  unsigned long currentTime = millis();
+  
+  if (currentTime - lastUpdate < MAIN_LOOP_INTERVAL_MS) {
+    return;  // 100Hz update rate
+  }
+  
+  lastUpdate = currentTime;
+  
   switches.readAndDebounce();
   modeController.detectSwitchPatterns();
   modeController.updateStateMachine();
 
   // Determine which loop states are currently applied to relays
   const bool* appliedLoopStates;
+  
   if (state.currentMode == EDIT_MODE) {
     appliedLoopStates = state.editModeLoopStates;
     relays.update(state.editModeLoopStates);
