@@ -81,12 +81,14 @@ if (midiInput.hasProgramChange()) {
   uint8_t pc = midiInput.getProgramChange();
   midiInput.clearProgramChange();
   
+  // Ignore MIDI PC messages if in global configuration mode
+  if (state.currentMode == GLOBAL_CONFIG_MODE) {
+    return;
+  }
+  
   if (pc >= 1 && pc <= TOTAL_PRESETS) {
-    // Switch to bank mode if not already
-    if (state.currentMode != BANK_MODE) {
-      state.currentMode = BANK_MODE;
-      state.displayState = SHOWING_BANK;
-    }
+    // Stay in current mode - do NOT auto-switch to BANK_MODE
+    // Just load the preset and update display
     
     // Calculate bank and preset (PC 1-128)
     uint8_t bank = (pc - 1) / PRESETS_PER_BANK + 1;      // Banks 1-32
@@ -114,11 +116,12 @@ if (midiInput.hasProgramChange()) {
 #### Behavior Specifications
 
 1. **Channel Filtering**: Only respond to PC messages on the configured MIDI channel
-2. **Mode Switching**: Automatically switch to BANK_MODE when valid PC received
-3. **Out of Range**: Ignore PC messages < 1 or > 128
-4. **Display Feedback**: Flash the received PC number (same as when switch pressed)
-5. **Relay Update**: Immediately apply the preset to relays
-6. **LED Update**: Update status LEDs to reflect new preset
+2. **Mode Preservation**: Stay in the current mode when PC received (do NOT auto-switch modes)
+3. **Global Config Protection**: Ignore all incoming PC messages when in GLOBAL_CONFIG_MODE
+4. **Out of Range**: Ignore PC messages < 1 or > 128
+5. **Display Feedback**: Flash the received PC number (same as when switch pressed)
+6. **Relay Update**: Immediately apply the preset to relays
+7. **LED Update**: Update status LEDs to reflect new preset
 
 ### Error Handling
 
@@ -140,12 +143,17 @@ Add a third operating mode (CC_MODE) where the four footswitches send MIDI Contr
 Current Modes:
 - MANUAL_MODE
 - BANK_MODE
-- EDIT_MODE
+- EDIT_MODE (for editing loop presets)
 
 New:
-- CC_MODE
-- CC_CONFIG_MODE (for configuring CC parameters)
+- CC_MODE (for sending CC messages)
+- CC_EDIT_MODE (for editing CC toggle states for a preset)
+- GLOBAL_CONFIG_MODE (for all global configuration)
 ```
+
+**Important Distinction**:
+- **CC_EDIT_MODE**: Similar to EDIT_MODE but for CC switches. Allows saving the toggle state of CC switches for a given preset (analogous to saving loop states for a preset).
+- **GLOBAL_CONFIG_MODE**: A global configuration interface for system-wide settings including CC parameters, MIDI settings, and other future configuration options. Since CC mode can be hidden from normal mode cycling, all CC configuration must be accessible through this global mode.
 
 ### CC Mode Behavior
 
@@ -161,18 +169,46 @@ When in CC_MODE:
 - Display shows "CC" when in CC mode
 - LEDs show which switches are currently "on"
 
-### CC Configuration Mode
+### CC Edit Mode
 
-A special configuration mode for setting up CC parameters.
+CC_EDIT_MODE allows saving the toggle state of CC switches for a specific preset, similar to how EDIT_MODE saves loop states for presets.
+
+**Concept**: Just as loop presets remember which loops are on/off for each program change, CC presets remember which CC switches are on/off (in toggle mode) for each program change. This allows CC switch states to be recalled along with loop states.
 
 #### Entry/Exit
 
-- **Enter**: From CC_MODE, hold SW2+SW3 for 2 seconds
-- **Exit**: Hold SW2+SW3 for 2 seconds (saves and returns to CC_MODE)
+- **Enter**: From CC_MODE (after selecting a preset via footswitch or MIDI PC), hold SW2+SW3 for 2 seconds
+- **Exit**: Hold SW2+SW3 for 2 seconds (saves CC toggle states to preset and returns to CC_MODE)
+- **Important**: Can only enter after a preset is active (not when in global preset mode)
+
+#### Behavior
+
+- Press SW1-SW4 to toggle the CC switch states (only affects toggle-mode switches)
+- The current state is saved to the preset when exiting
+- When the preset is recalled (via footswitch or MIDI PC), the saved CC toggle states are restored
+- Display flashes "Edit" with scrolling dot (similar to existing EDIT_MODE)
+- LEDs show the current CC toggle states being edited
+
+#### Use Case Example
+
+1. Select preset 1 (Bank 1, Switch 1)
+2. Enter CC_EDIT_MODE
+3. Set SW1 ON, SW2 OFF, SW3 ON, SW4 OFF
+4. Exit and save
+5. Later, when preset 1 is recalled, the CC switches will automatically restore to those states
+
+### Global Configuration Mode
+
+GLOBAL_CONFIG_MODE is a system-wide configuration interface for all global settings, including CC parameters.
+
+#### Entry/Exit
+
+- **Enter**: From any mode (except during other long-press operations), hold SW1+SW4 for 2 seconds
+- **Exit**: Hold SW1+SW4 for 2 seconds (saves and returns to previous mode)
 
 #### Navigation
 
-In CC_CONFIG_MODE:
+In GLOBAL_CONFIG_MODE:
 - **SW1**: Navigate left (previous item)
 - **SW4**: Navigate right (next item)
 - **SW2**: Decrease value
@@ -288,13 +324,22 @@ enum Mode {
   BANK_MODE,
   EDIT_MODE,
   CC_MODE,
-  CC_CONFIG_MODE
+  CC_EDIT_MODE,
+  GLOBAL_CONFIG_MODE
 };
 ```
 
 ### Mode Transitions
 
 ```
+    ┌────────────────────────────────────────────────────────────┐
+    │                  GLOBAL_CONFIG_MODE                        │
+    │          (SW1+SW4 2s hold from any mode)                   │
+    │                    SW1+SW4 2s → save & exit                │
+    └────────────────────────────────────────────────────────────┘
+                              ▲
+                              │ SW1+SW4 (2s hold)
+                              │
                     ┌──────────────┐
          ┌──────────│ MANUAL_MODE  │◄────────┐
          │          └──────────────┘         │
@@ -321,17 +366,27 @@ enum Mode {
          │
          │          ┌──────────────┐
          └──────────│   CC_MODE    │◄──────────┐
-         │          └──────┬───────┘           │
-         │                 │                   │
-         │                 │ SW2+SW3 (2s hold) │
-         │                 │                   │
-         │          ┌──────▼────────────┐      │
-         │          │  CC_CONFIG_MODE   │──────┘
-         │          └───────────────────┘
-         │                 │ SW2+SW3 (2s hold) → saves
-         │
-         └─────────────────┘ (cycles through modes)
+                    └──────┬───────┘           │
+                           │                   │
+                           │ SW2+SW3 (2s hold, if preset active)
+                           │                   │
+                    ┌──────▼──────────┐        │
+                    │  CC_EDIT_MODE   │────────┘
+                    └──────┬──────────┘
+                           │
+                           │ SW2+SW3 (2s hold) → saves
+                           │
+                    ┌──────▼──────────┐
+                    │ SHOWING_SAVED   │
+                    └──────┬──────────┘
+                           │
+                           └──────────►CC_MODE
 ```
+
+**Key Points**:
+- GLOBAL_CONFIG_MODE is accessible from any mode via SW1+SW4 2-second hold
+- CC_EDIT_MODE is entered from CC_MODE (similar to how EDIT_MODE is entered from BANK_MODE)
+- Mode cycling (SW2+SW3 quick press): MANUAL_MODE ↔ BANK_MODE ↔ CC_MODE (if enabled)
 
 ### Mode Cycling
 
@@ -356,9 +411,10 @@ enum DisplayState {
   FLASHING_PC,
   SHOWING_SAVED,
   EDIT_MODE_ANIMATED,
-  SHOWING_CC,           // NEW: Shows "CC" in CC mode
-  SHOWING_CC_CONFIG,    // NEW: Shows CC config item
-  SHOWING_CC_SAVED      // NEW: Shows "SAVEd" after CC config
+  SHOWING_CC,              // NEW: Shows "CC" in CC mode
+  CC_EDIT_MODE_ANIMATED,   // NEW: Shows "Edit" in CC edit mode
+  SHOWING_GLOBAL_CONFIG,   // NEW: Shows global config item
+  SHOWING_CONFIG_SAVED     // NEW: Shows "SAVEd" after global config
 };
 ```
 
@@ -371,15 +427,30 @@ Purpose: Indicate CC mode is active
 LEDs: Show which CC switches are currently "on"
 ```
 
-#### SHOWING_CC_CONFIG
+#### CC_EDIT_MODE_ANIMATED
+```
+Display: "Edit" with scrolling dot animation
+Purpose: Indicate CC edit mode is active (editing CC toggle states for preset)
+LEDs: Show current CC toggle states being edited
+```
+
+#### SHOWING_GLOBAL_CONFIG
 ```
 Display varies by config item:
-- "CC On  " or "CC Off "
+- "CC On  " or "CC Off " (CC mode enable/disable)
 - "CC1  12" (CC number for switch 1)
 - "U1  127" (CC value for switch 1)
 - "b1  tGL" (behavior: toggle)
 - "b1  non" (behavior: momentary)
 - Similar for switches 2-4
+- Future: Other global settings
+```
+
+#### SHOWING_CONFIG_SAVED
+```
+Display: "SAVEd"
+Purpose: Confirm global configuration has been saved
+Duration: 2 seconds before returning to previous mode
 ```
 
 ---
@@ -425,12 +496,25 @@ Address  | Size | Content              | Notes
 0x8C     | 1    | SW4 CC Number        | 0-127
 0x8D     | 1    | SW4 CC Value         | 1-127
 0x8E     | 1    | SW4 Behavior         | 0x00=momentary, 0x01=toggle
-0x8F-    | 880  | Unused               | Available for future use
+0x8F     | 1    | CC Preset 1          | CC toggle states for preset 1
+0x90     | 1    | CC Preset 2          | CC toggle states for preset 2
+...      | ...  | ...                  | ...
+0x16E    | 1    | CC Preset 128        | CC toggle states for preset 128
+0x16F-   | 656  | Unused               | Available for future use
 0x3FF    |      |                      |
+
+CC Preset Byte Format (same as loop preset format):
+  Bit 0: SW1 CC toggle state (1=on, 0=off)
+  Bit 1: SW2 CC toggle state
+  Bit 2: SW3 CC toggle state
+  Bit 3: SW4 CC toggle state
+  Bits 4-7: Unused (reserved for future)
 ```
 
-**Total CC Configuration**: 13 bytes  
-**Remaining Available**: 880 bytes
+**Total CC Configuration**: 13 bytes (global config)
+**Total CC Preset States**: 128 bytes (1 byte per preset)
+**Total New EEPROM Usage**: 141 bytes
+**Remaining Available**: 656 bytes
 
 **Note on Address 0x00**: This address remains reserved for backward compatibility. In earlier firmware versions, it stored the MIDI channel. Since MIDI channel is now hardware-configured via DIP switches (read at startup), this address is no longer used but is kept reserved to avoid potential conflicts if old EEPROM data is present. Future firmware could repurpose this address if needed.
 
@@ -439,14 +523,16 @@ Address  | Size | Content              | Notes
 ```cpp
 // Add to config.h
 const uint8_t EEPROM_CC_ENABLED_ADDR = 0x82;
-const uint8_t EEPROM_CC_CONFIG_START = 0x83;  // Start of CC switch configs
-const uint8_t EEPROM_CC_CONFIG_SIZE = 3;      // Bytes per switch (number, value, behavior)
+const uint8_t EEPROM_CC_CONFIG_START = 0x83;     // Start of CC switch configs
+const uint8_t EEPROM_CC_CONFIG_SIZE = 3;         // Bytes per switch (number, value, behavior)
+const uint8_t EEPROM_CC_PRESETS_START = 0x8F;    // Start of CC preset states
+const uint16_t EEPROM_CC_PRESETS_END = 0x16E;    // End of CC preset states
 
 // Default values
-const uint8_t DEFAULT_CC_ENABLED = 0;         // OFF by default
-const uint8_t DEFAULT_CC_NUMBER_BASE = 1;     // CC 1, 2, 3, 4 for SW1-4
-const uint8_t DEFAULT_CC_VALUE = 127;         // Full value
-const uint8_t DEFAULT_CC_BEHAVIOR = 1;        // Toggle mode
+const uint8_t DEFAULT_CC_ENABLED = 0;            // OFF by default
+const uint8_t DEFAULT_CC_NUMBER_BASE = 1;        // CC 1, 2, 3, 4 for SW1-4
+const uint8_t DEFAULT_CC_VALUE = 127;            // Full value
+const uint8_t DEFAULT_CC_BEHAVIOR = 1;           // Toggle mode
 ```
 
 ---
@@ -569,16 +655,23 @@ Still well within budget
 3. Add CC mode to display
 4. Test MIDI CC output
 
-#### Phase 3: CC Configuration
-1. Add CC_CONFIG_MODE
-2. Implement navigation and value adjustment
-3. Add EEPROM save/load for CC config
-4. Test all configuration items
+#### Phase 3: Global Configuration Mode
+1. Add GLOBAL_CONFIG_MODE
+2. Implement SW1+SW4 entry/exit (2s hold)
+3. Implement navigation and value adjustment
+4. Add EEPROM save/load for global config
+5. Test all configuration items
 
-#### Phase 4: CC Advanced Features
+#### Phase 4: CC Edit Mode
+1. Add CC_EDIT_MODE (similar to EDIT_MODE)
+2. Implement CC toggle state saving for presets
+3. Add EEPROM storage for CC preset states
+4. Test preset recall with CC states
+
+#### Phase 5: CC Advanced Features
 1. Implement toggle vs momentary behavior
 2. Add CC state LEDs
-3. Test CC mode enable/disable
+3. Test CC mode enable/disable via global config
 4. Test mode cycling with CC mode
 
 ### Testing Strategy
@@ -588,7 +681,8 @@ Still well within budget
 - Verify correct preset loading
 - Test channel filtering (send on wrong channel)
 - Test invalid PC numbers (0, 129+)
-- Verify mode switching from MANUAL to BANK
+- Verify mode preservation (stay in current mode, don't auto-switch)
+- Verify PC messages ignored when in GLOBAL_CONFIG_MODE
 
 #### CC Mode Testing
 - Configure each switch with unique CC numbers
@@ -618,7 +712,8 @@ enum Mode {
   BANK_MODE,
   EDIT_MODE,
   CC_MODE,
-  CC_CONFIG_MODE
+  CC_EDIT_MODE,
+  GLOBAL_CONFIG_MODE
 };
 
 // CC configuration constants
@@ -629,7 +724,8 @@ const uint8_t DEFAULT_CC_ENABLED = 0;
 const uint8_t DEFAULT_CC_NUMBER_BASE = 1;
 const uint8_t DEFAULT_CC_VALUE = 127;
 const uint8_t DEFAULT_CC_BEHAVIOR = 1;
-const uint16_t CC_CONFIG_LONG_PRESS_MS = 2000;
+const uint16_t CC_EDIT_LONG_PRESS_MS = 2000;
+const uint16_t GLOBAL_CONFIG_LONG_PRESS_MS = 2000;
 ```
 
 ### StateManager Additions
@@ -648,13 +744,23 @@ public:
     bool currentState;
   };
   CCSwitch ccSwitches[4];
-  uint8_t ccConfigItem;
   
-  // CC configuration
+  // Global configuration
+  uint8_t globalConfigItem;
+  Mode previousMode;  // For returning from GLOBAL_CONFIG_MODE
+  
+  // CC Edit Mode
+  bool ccEditModeStates[4];  // Editing CC toggle states for preset
+  
+  // Configuration methods
   void loadCCConfig();
   void saveCCConfig();
   void resetCCConfig();
   bool isCCModeEnabled();
+  
+  // CC preset state methods
+  void saveCCPreset(uint8_t presetNumber);
+  void loadCCPreset(uint8_t presetNumber);
 };
 ```
 
@@ -716,15 +822,14 @@ When updating firmware with these changes:
 1. Device boots normally
 2. CC mode is disabled by default
 3. Behavior identical to previous firmware
-4. User must explicitly enable CC mode in CC_CONFIG_MODE
+4. User must explicitly enable CC mode in GLOBAL_CONFIG_MODE
 
 #### Enabling CC Mode
-1. Cycle to CC_MODE (press SW2+SW3 briefly to cycle through modes)
-2. Once in CC_MODE, enter CC_CONFIG_MODE by holding SW2+SW3 for 2 seconds
-3. Navigate to "CC Off" item
+1. From any mode, hold SW1+SW4 for 2 seconds to enter GLOBAL_CONFIG_MODE
+2. Navigate to "CC Off" item using SW1/SW4
 3. Press SW3 to change to "CC On"
-4. Hold SW2+SW3 to save
-5. CC mode now appears in mode cycling
+4. Hold SW1+SW4 for 2 seconds to save and exit
+5. CC mode now appears in mode cycling (MANUAL ↔ BANK ↔ CC)
 
 ---
 
