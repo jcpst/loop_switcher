@@ -30,6 +30,14 @@ const bool LED_ACTIVE_LOW = false; // Set true if LEDs wired: +5V -> resistor ->
 // MIDI uses hardware UART TX (pin 1 on Uno/Nano)
 
 // ===== CONSTANTS =====
+// System configuration
+const uint8_t NUM_LOOPS = 4;
+const uint8_t NUM_BANKS = 32;
+const uint8_t PRESETS_PER_BANK = 4;
+const uint8_t TOTAL_PRESETS = NUM_BANKS * PRESETS_PER_BANK;  // 128
+const uint8_t MAIN_LOOP_INTERVAL_MS = 10;  // For 100Hz update rate
+
+// Timing
 const uint8_t DEBOUNCE_MS = 30;
 const uint8_t SIMULTANEOUS_WINDOW_MS = 100;
 const uint16_t LONG_PRESS_MS = 1000;
