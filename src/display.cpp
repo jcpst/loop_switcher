@@ -1,10 +1,14 @@
 #include "display.h"
 
+// Sentinel value for blank/uninitialized display positions
+#define BLANK_VALUE 0xFE
+
 Display::Display(uint8_t dinPin, uint8_t clkPin, uint8_t csPin)
   : lc(dinPin, clkPin, csPin, 1), bufferInitialized(false) {
-  // Initialize buffers to invalid state
-  for (uint8_t i = 0; i < 8; i++) {
+  // Initialize buffers to sentinel value
+  for (uint8_t i = 0; i < DISPLAY_DIGITS; i++) {
     digitBuffer[i] = 0xFF;  // Invalid value to force initial update
+    isDigitBuffer[i] = false;
     decimalBuffer[i] = false;
   }
 }
@@ -23,13 +27,13 @@ void Display::setCharAtBuffered(uint8_t position, char c, bool dp) {
     return;
   }
   
-  // Convert char to rough byte representation for comparison
-  // This is simplified - the actual segment encoding is handled by LedControl
   uint8_t charValue = (uint8_t)c;
   
-  if (digitBuffer[position] != charValue || decimalBuffer[position] != dp) {
+  // Update only if the character, type, or decimal point changed
+  if (digitBuffer[position] != charValue || isDigitBuffer[position] != false || decimalBuffer[position] != dp) {
     lc.setChar(0, position, c, dp);
     digitBuffer[position] = charValue;
+    isDigitBuffer[position] = false;  // Mark as character, not digit
     decimalBuffer[position] = dp;
   }
 }
@@ -41,9 +45,11 @@ void Display::setDigitAtBuffered(uint8_t position, uint8_t digit, bool dp) {
     return;
   }
   
-  if (digitBuffer[position] != digit || decimalBuffer[position] != dp) {
+  // Update only if the digit, type, or decimal point changed
+  if (digitBuffer[position] != digit || isDigitBuffer[position] != true || decimalBuffer[position] != dp) {
     lc.setDigit(0, position, digit, dp);
     digitBuffer[position] = digit;
+    isDigitBuffer[position] = true;  // Mark as digit, not character
     decimalBuffer[position] = dp;
   }
 }
@@ -55,10 +61,11 @@ void Display::clearBuffered() {
     return;
   }
   
-  for (uint8_t i = 0; i < 8; i++) {
-    if (digitBuffer[i] != 0) {  // 0 represents blank
+  for (uint8_t i = 0; i < DISPLAY_DIGITS; i++) {
+    if (digitBuffer[i] != BLANK_VALUE) {
       lc.setChar(0, i, ' ', false);
-      digitBuffer[i] = 0;
+      digitBuffer[i] = BLANK_VALUE;
+      isDigitBuffer[i] = false;
       decimalBuffer[i] = false;
     }
   }
