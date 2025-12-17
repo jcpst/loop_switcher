@@ -52,7 +52,7 @@ void ModeController::detectSwitchPatterns() {
   // Right switches: Bank up (only in bank mode)
   if (state.currentMode == BANK_MODE && sw3Pressed && sw4Pressed) {
     state.currentBank++;
-    if (state.currentBank > 32) state.currentBank = 1;
+    if (state.currentBank > NUM_BANKS) state.currentBank = 1;
     state.displayState = SHOWING_BANK;
     // Clear global preset when changing banks
     state.globalPresetActive = false;
@@ -63,7 +63,7 @@ void ModeController::detectSwitchPatterns() {
 
   // Left switches: Bank down (only in bank mode)
   if (state.currentMode == BANK_MODE && sw1Pressed && sw2Pressed) {
-    if (state.currentBank == 1) state.currentBank = 32;
+    if (state.currentBank == 1) state.currentBank = NUM_BANKS;
     else state.currentBank--;
     state.displayState = SHOWING_BANK;
     // Clear global preset when changing banks
@@ -74,7 +74,7 @@ void ModeController::detectSwitchPatterns() {
   }
 
   // Individual switch presses
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < NUM_LOOPS; i++) {
     if (switches.isRecentPress(i)) {
       handleSingleSwitchPress(i);
       switches.clearRecentPresses();
@@ -86,7 +86,7 @@ void ModeController::detectSwitchPatterns() {
 void ModeController::enterEditMode() {
   state.currentMode = EDIT_MODE;
   // Copy current loop states to edit buffer
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < NUM_LOOPS; i++) {
     state.editModeLoopStates[i] = state.loopStates[i];
   }
   state.displayState = EDIT_MODE_ANIMATED;
@@ -96,14 +96,14 @@ void ModeController::enterEditMode() {
 
 void ModeController::exitEditMode() {
   // Copy edited states back to main loop states
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < NUM_LOOPS; i++) {
     state.loopStates[i] = state.editModeLoopStates[i];
   }
   // Update relays immediately with new states
   relays.update(state.loopStates);
 
   // Calculate preset number and save to EEPROM
-  uint8_t presetNumber = ((state.currentBank - 1) * 4) + state.activePreset + 1;
+  uint8_t presetNumber = ((state.currentBank - 1) * PRESETS_PER_BANK) + state.activePreset + 1;
   state.savePreset(presetNumber);
 
   // Show "SAVED" message
@@ -124,12 +124,12 @@ void ModeController::handleSingleSwitchPress(uint8_t switchIndex) {
   else if (state.currentMode == BANK_MODE) {
     // Check if pressing the same switch as the active preset
     if (state.activePreset == switchIndex && !state.globalPresetActive) {
-      // Activate global preset - send PC 128 (bank 32, preset 4)
+      // Activate global preset - send PC TOTAL_PRESETS (bank NUM_BANKS, preset PRESETS_PER_BANK)
       state.globalPresetActive = true;
-      sendMIDIProgramChange(128, state.midiChannel);
+      sendMIDIProgramChange(TOTAL_PRESETS, state.midiChannel);
 
-      // Flash PC 128 on display
-      state.flashingPC = 128;
+      // Flash PC number on display
+      state.flashingPC = TOTAL_PRESETS;
       state.pcFlashStartTime = millis();
       state.displayState = FLASHING_PC;
     }
@@ -139,7 +139,7 @@ void ModeController::handleSingleSwitchPress(uint8_t switchIndex) {
       state.activePreset = switchIndex;
 
       // Send MIDI Program Change
-      uint8_t pc = ((state.currentBank - 1) * 4) + switchIndex + 1;
+      uint8_t pc = ((state.currentBank - 1) * PRESETS_PER_BANK) + switchIndex + 1;
       sendMIDIProgramChange(pc, state.midiChannel);
 
       // Load preset from EEPROM and apply to relays
