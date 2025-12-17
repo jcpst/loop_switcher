@@ -3,6 +3,20 @@
 
 #include <Arduino.h>
 
+// ===== DEBUG CONFIGURATION =====
+// Uncomment to enable debug output via Serial
+// WARNING: Debug output interferes with MIDI TX (both use hardware Serial)
+// Only enable during development when MIDI is not needed
+// #define DEBUG_MODE
+
+#ifdef DEBUG_MODE
+#define DEBUG_PRINT(x) Serial.print(x)
+#define DEBUG_PRINTLN(x) Serial.println(x)
+#else
+#define DEBUG_PRINT(x)
+#define DEBUG_PRINTLN(x)
+#endif
+
 // ===== PIN DEFINITIONS =====
 // Footswitches (active LOW, internal pullup)
 const uint8_t SW1_PIN = 2;

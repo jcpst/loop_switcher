@@ -1,4 +1,5 @@
 #include "mode_controller.h"
+#include "config.h"
 
 ModeController::ModeController(StateManager& state, SwitchHandler& switches, RelayController& relays)
   : state(state), switches(switches), relays(relays) {
@@ -36,9 +37,11 @@ void ModeController::detectSwitchPatterns() {
   // Center switches: toggle Manual/Bank mode
   if (sw2Pressed && sw3Pressed) {
     if (state.currentMode == MANUAL_MODE) {
+      DEBUG_PRINTLN("Mode change: MANUAL -> BANK");
       state.currentMode = BANK_MODE;
       state.displayState = SHOWING_BANK;
     } else if (state.currentMode == BANK_MODE) {
+      DEBUG_PRINTLN("Mode change: BANK -> MANUAL");
       state.currentMode = MANUAL_MODE;
       state.displayState = SHOWING_MANUAL;
       // Clear global preset state when leaving bank mode
@@ -53,6 +56,8 @@ void ModeController::detectSwitchPatterns() {
   if (state.currentMode == BANK_MODE && sw3Pressed && sw4Pressed) {
     state.currentBank++;
     if (state.currentBank > NUM_BANKS) state.currentBank = 1;
+    DEBUG_PRINT("Bank change: ");
+    DEBUG_PRINTLN(state.currentBank);
     state.displayState = SHOWING_BANK;
     // Clear global preset when changing banks
     state.globalPresetActive = false;
@@ -65,6 +70,8 @@ void ModeController::detectSwitchPatterns() {
   if (state.currentMode == BANK_MODE && sw1Pressed && sw2Pressed) {
     if (state.currentBank == 1) state.currentBank = NUM_BANKS;
     else state.currentBank--;
+    DEBUG_PRINT("Bank change: ");
+    DEBUG_PRINTLN(state.currentBank);
     state.displayState = SHOWING_BANK;
     // Clear global preset when changing banks
     state.globalPresetActive = false;
@@ -84,6 +91,7 @@ void ModeController::detectSwitchPatterns() {
 }
 
 void ModeController::enterEditMode() {
+  DEBUG_PRINTLN("Mode change: BANK -> EDIT");
   state.currentMode = EDIT_MODE;
   // Copy current loop states to edit buffer
   for (int i = 0; i < NUM_LOOPS; i++) {
@@ -95,6 +103,7 @@ void ModeController::enterEditMode() {
 }
 
 void ModeController::exitEditMode() {
+  DEBUG_PRINTLN("Mode change: EDIT -> BANK (saving)");
   // Copy edited states back to main loop states
   for (int i = 0; i < NUM_LOOPS; i++) {
     state.loopStates[i] = state.editModeLoopStates[i];
