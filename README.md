@@ -123,3 +123,9 @@ Debug output includes:
 - MIDI channel configuration
 
 Only enable debug mode during development when MIDI output is not needed.
+
+## License
+
+See the [LICENSE](LICENSE) file for full details.
+
+For commercial licensing inquiries, please contact the copyright holder.
