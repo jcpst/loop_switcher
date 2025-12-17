@@ -246,8 +246,8 @@ The display scrolls through these items:
 1. MIDI Out Channel
    Display: "Out  CH" followed by "Ch   nn"
    Range: 1-16 (MIDI channels)
-   Default: 1 (or last hardware-configured channel)
-   Note: Replaces hardware DIP switch configuration with software setting
+   Default: 1
+   Note: Software-configurable MIDI output channel
    
 2. CC Mode Enable/Disable
    Display: "CC On  " or "CC Off "
@@ -570,7 +570,7 @@ CC Preset Byte Format (same as loop preset format):
 **Total New EEPROM Usage**: 146 bytes (18 config + 128 preset states)
 **Remaining Available**: 748 bytes (0x113-0x3FF)
 
-**Note on Address 0x00**: This address is now repurposed to store the MIDI Out Channel (software configuration), replacing the hardware DIP switch method. This provides more flexibility and allows users to change the MIDI channel without opening the device.
+**Note on Address 0x00**: This address stores the MIDI Out Channel (software configuration). This provides flexibility to change the MIDI channel through the configuration interface.
 
 ### EEPROM Constants
 
@@ -618,7 +618,7 @@ Opto-isolator emitter ──── RX (Pin 0)
 - 1kΩ pullup resistor on RX side (often internal to opto)
 - Diode for protection (1N4148)
 
-**Note:** MIDI IN and MIDI OUT can share the same MIDI channel configuration from DIP switches.
+**Note:** MIDI IN and MIDI OUT use the software-configured MIDI channel stored in EEPROM.
 
 ### No Additional Hardware for CC Mode
 
@@ -877,9 +877,9 @@ private:
 When updating firmware with these changes:
 
 1. **Address 0x00**: Now stores MIDI Out Channel (was reserved/unused)
-   - On first boot, read hardware DIP switches one last time and store to 0x00
-   - Subsequent boots read from EEPROM, allowing software configuration
-   - DIP switches can be removed from hardware after migration
+   - Defaults to MIDI channel 1 on first boot
+   - All subsequent boots read from EEPROM
+   - User can change via GLOBAL_CONFIG_MODE
 2. Existing preset data (addresses 0x02-0x81) is preserved
 3. New CC configuration area starts at 0x82 (previously unused)
 4. No migration needed for CC areas - auto-initialize to defaults
