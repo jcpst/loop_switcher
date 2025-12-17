@@ -1,4 +1,5 @@
 #include "state_manager.h"
+#include "config.h"
 #include <EEPROM.h>
 
 StateManager::StateManager()
@@ -39,15 +40,20 @@ uint8_t StateManager::readMidiChannelFromHardware() {
 void StateManager::initialize() {
   // Read MIDI channel from DIP switches on footswitch pins
   midiChannel = readMidiChannelFromHardware();
+  DEBUG_PRINT("MIDI channel set to: ");
+  DEBUG_PRINTLN(midiChannel + 1);
 
   // Check if EEPROM has been initialized
   uint8_t initFlag = EEPROM.read(EEPROM_INIT_FLAG_ADDR);
   if (initFlag != EEPROM_INIT_MAGIC) {
+    DEBUG_PRINTLN("First boot - initializing EEPROM");
     // First boot - initialize all presets to 0 (all loops off)
     for (uint8_t i = 0; i < TOTAL_PRESETS; i++) {
       EEPROM.write(EEPROM_PRESETS_START_ADDR + i, 0);
     }
     EEPROM.write(EEPROM_INIT_FLAG_ADDR, EEPROM_INIT_MAGIC);
+  } else {
+    DEBUG_PRINTLN("EEPROM already initialized");
   }
 }
 
@@ -76,6 +82,10 @@ void StateManager::savePreset(uint8_t presetNumber) {
   // Only write to EEPROM if the value has changed (reduces wear)
   uint8_t currentValue = EEPROM.read(EEPROM_PRESETS_START_ADDR + presetNumber - 1);
   if (currentValue != packedState) {
+    DEBUG_PRINT("Saving preset ");
+    DEBUG_PRINT(presetNumber);
+    DEBUG_PRINT(" with state: 0x");
+    DEBUG_PRINTLN(packedState, HEX);
     EEPROM.write(EEPROM_PRESETS_START_ADDR + presetNumber - 1, packedState);
   }
 }
@@ -85,6 +95,11 @@ void StateManager::loadPreset(uint8_t presetNumber) {
 
   // Read packed state from EEPROM
   uint8_t packedState = EEPROM.read(EEPROM_PRESETS_START_ADDR + presetNumber - 1);
+
+  DEBUG_PRINT("Loading preset ");
+  DEBUG_PRINT(presetNumber);
+  DEBUG_PRINT(" with state: 0x");
+  DEBUG_PRINTLN(packedState, HEX);
 
   // Unpack into loop states
   for (int i = 0; i < NUM_LOOPS; i++) {

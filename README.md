@@ -107,3 +107,19 @@ pio run --target upload
 # Serial monitor
 pio device monitor
 ```
+
+### Debug Mode
+Debug output can be enabled to help with development and troubleshooting. **WARNING**: Debug output uses the same hardware Serial port as MIDI TX, so they cannot be used simultaneously.
+
+To enable debug mode:
+1. Uncomment `#define DEBUG_MODE` in `src/config.h`, OR
+2. Build with the `uno_debug` environment: `pio run -e uno_debug`
+
+Debug output includes:
+- MIDI initialization and program changes
+- Mode transitions (Manual ↔ Bank ↔ Edit)
+- Bank changes
+- Preset loading and saving
+- MIDI channel configuration
+
+Only enable debug mode during development when MIDI output is not needed.
