@@ -22,7 +22,8 @@ Replace magic numbers throughout the codebase with named constants to improve co
 const uint8_t NUM_LOOPS = 4;
 const uint8_t NUM_BANKS = 32;
 const uint8_t PRESETS_PER_BANK = 4;
-const uint8_t TOTAL_PRESETS = 128;  // NUM_BANKS * PRESETS_PER_BANK
+const uint8_t TOTAL_PRESETS = NUM_BANKS * PRESETS_PER_BANK;  // 128
+const uint8_t MAIN_LOOP_INTERVAL_MS = 10;  // For 100Hz update rate
 ```
 
 ### Files Affected
@@ -60,9 +61,13 @@ Implement a compile-time debug flag that enables debug output via Serial without
 ```
 
 ### Considerations
-- Debug output should not interfere with MIDI TX on Serial
+- **CRITICAL:** Debug output will interfere with MIDI TX since both use hardware Serial (UART)
+- Options to resolve conflict:
+  1. Use SoftwareSerial on different pins for debug output (recommended)
+  2. Only enable debug during development/testing when MIDI is not needed
+  3. Use LED blink patterns for basic debugging without serial
 - Should be compile-time flag (no runtime overhead when disabled)
-- Consider using a separate software serial for debug if needed
+- Document the Serial conflict clearly in the implementation
 
 ### Acceptance Criteria
 - [ ] DEBUG_MODE flag added to config.h
@@ -157,12 +162,14 @@ void loop() {
     static unsigned long lastUpdate = 0;
     unsigned long currentTime = millis();
     
-    if (currentTime - lastUpdate < 10) return;  // 100Hz update rate
+    if (currentTime - lastUpdate < MAIN_LOOP_INTERVAL_MS) return;  // 100Hz update rate
     lastUpdate = currentTime;
     
     // ... rest of loop code
 }
 ```
+
+Note: `MAIN_LOOP_INTERVAL_MS` should be defined in `config.h` as part of Sub-Task 5.
 
 ### Files Affected
 - `src/main.cpp` - Modify main loop
