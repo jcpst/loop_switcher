@@ -1,13 +1,71 @@
 #include "display.h"
 
+// Sentinel values for display buffer management
+#define BLANK_VALUE 0xFE   // Represents a blank/cleared display position
+#define INIT_VALUE 0xFF    // Initial invalid value to force first update
+
 Display::Display(uint8_t dinPin, uint8_t clkPin, uint8_t csPin)
-  : lc(dinPin, clkPin, csPin, 1) {
+  : lc(dinPin, clkPin, csPin, 1), bufferInitialized(false) {
+  // Initialize buffers to force initial update
+  for (uint8_t i = 0; i < DISPLAY_DIGITS; i++) {
+    digitBuffer[i] = INIT_VALUE;  // Force update on first use
+    isDigitBuffer[i] = false;
+    decimalBuffer[i] = false;
+  }
 }
 
 void Display::begin() {
   lc.shutdown(0, false);  // Wake up display
   lc.setIntensity(0, 8);  // Medium brightness (0-15)
   lc.clearDisplay(0);
+  bufferInitialized = true;
+}
+
+// Buffered setChar - only updates if value changed
+void Display::setCharAtBuffered(uint8_t position, char c, bool dp) {
+  uint8_t charValue = (uint8_t)c;
+  
+  // Update only if the character, type, or decimal point changed (or buffer not initialized)
+  if (!bufferInitialized || digitBuffer[position] != charValue || isDigitBuffer[position] || decimalBuffer[position] != dp) {
+    lc.setChar(0, position, c, dp);
+    digitBuffer[position] = charValue;
+    isDigitBuffer[position] = false;  // Mark as character, not digit
+    decimalBuffer[position] = dp;
+  }
+}
+
+// Buffered setDigit - only updates if value changed
+void Display::setDigitAtBuffered(uint8_t position, uint8_t digit, bool dp) {
+  // Update only if the digit, type, or decimal point changed (or buffer not initialized)
+  if (!bufferInitialized || digitBuffer[position] != digit || !isDigitBuffer[position] || decimalBuffer[position] != dp) {
+    lc.setDigit(0, position, digit, dp);
+    digitBuffer[position] = digit;
+    isDigitBuffer[position] = true;  // Mark as digit, not character
+    decimalBuffer[position] = dp;
+  }
+}
+
+// Buffered clear - only clears positions that aren't already blank
+void Display::clearBuffered() {
+  if (!bufferInitialized) {
+    lc.clearDisplay(0);
+    // Mark all positions as blank in buffer
+    for (uint8_t i = 0; i < DISPLAY_DIGITS; i++) {
+      digitBuffer[i] = BLANK_VALUE;
+      isDigitBuffer[i] = false;
+      decimalBuffer[i] = false;
+    }
+    return;
+  }
+  
+  for (uint8_t i = 0; i < DISPLAY_DIGITS; i++) {
+    if (digitBuffer[i] != BLANK_VALUE) {
+      lc.setChar(0, i, ' ', false);
+      digitBuffer[i] = BLANK_VALUE;
+      isDigitBuffer[i] = false;
+      decimalBuffer[i] = false;
+    }
+  }
 }
 
 void Display::update(DisplayState state, uint8_t value, bool loopStates[4], bool globalPreset, uint8_t animFrame) {
@@ -35,78 +93,78 @@ void Display::update(DisplayState state, uint8_t value, bool loopStates[4], bool
 }
 
 void Display::displayBankNumber(uint8_t num, bool globalPreset) {
-  clear();
+  clearBuffered();
 
-  setCharAt(7, 'b');
-  setCharAt(6, 'A');
-  setCharAt(5, 'n');
-  setCharAt(4, 'K');
+  setCharAtBuffered(7, 'b', false);
+  setCharAtBuffered(6, 'A', false);
+  setCharAtBuffered(5, 'n', false);
+  setCharAtBuffered(4, 'K', false);
 
   uint8_t tens = num / 10;
   uint8_t ones = num % 10;
 
-  lc.setDigit(0, 1, tens, false);
-  lc.setDigit(0, 0, ones, false);
+  setDigitAtBuffered(1, tens, false);
+  setDigitAtBuffered(0, ones, false);
 
   if (globalPreset) {
-    lc.setChar(0, 3, '-', false);
+    setCharAtBuffered(3, '-', false);
   }
 }
 
 void Display::displayChannel(uint8_t ch) {
-  clear();
+  clearBuffered();
 
-  setCharAt(7, 'C');
-  setCharAt(6, 'h');
-  setCharAt(5, 'a');
-  setCharAt(4, 'n');
+  setCharAtBuffered(7, 'C', false);
+  setCharAtBuffered(6, 'h', false);
+  setCharAtBuffered(5, 'a', false);
+  setCharAtBuffered(4, 'n', false);
 
   uint8_t tens = ch / 10;
   uint8_t ones = ch % 10;
 
-  lc.setDigit(0, 1, tens, false);
-  lc.setDigit(0, 0, ones, false);
+  setDigitAtBuffered(1, tens, false);
+  setDigitAtBuffered(0, ones, false);
 }
 
 void Display::displayEdit(uint8_t animFrame) {
   // Display "Edit" with scrolling decimal animation (E->d->i->t)
-  clear();
+  clearBuffered();
 
   // Show "Edit" text with scrolling decimal from left to right
-  lc.setChar(0, 5, 'E', animFrame == 0);
-  lc.setChar(0, 4, 'd', animFrame == 1);
-  lc.setChar(0, 3, 'i', animFrame == 2);
-  lc.setChar(0, 2, 't', animFrame == 3);
+  setCharAtBuffered(5, 'E', animFrame == 0);
+  setCharAtBuffered(4, 'd', animFrame == 1);
+  setCharAtBuffered(3, 'i', animFrame == 2);
+  setCharAtBuffered(2, 't', animFrame == 3);
 
   // Add trailing decimals for scroll effect
-  if (animFrame == 4) lc.setChar(0, 1, ' ', true);
-  if (animFrame == 5) lc.setChar(0, 0, ' ', true);
+  if (animFrame == 4) setCharAtBuffered(1, ' ', true);
+  if (animFrame == 5) setCharAtBuffered(0, ' ', true);
 }
 
 void Display::displaySaved() {
   // Display "SAvEd" centered on 8 digits
-  clear();
+  clearBuffered();
 
-  setCharAt(6, 'S');
-  setCharAt(5, 'A');
-  setCharAt(4, 'v');
-  setCharAt(3, 'E');
-  setCharAt(2, 'd');
+  setCharAtBuffered(6, 'S', false);
+  setCharAtBuffered(5, 'A', false);
+  setCharAtBuffered(4, 'v', false);
+  setCharAtBuffered(3, 'E', false);
+  setCharAtBuffered(2, 'd', false);
 }
 
 void Display::displayManualStatus(bool loopStates[4]) {
-  clear();
+  clearBuffered();
 
-  setCharAt(6, loopStates[3] ? '4' : '_');
-  setCharAt(4, loopStates[2] ? '3' : '_');
-  setCharAt(2, loopStates[1] ? '2' : '_');
-  setCharAt(0, loopStates[0] ? '1' : '_');
+  setCharAtBuffered(6, loopStates[3] ? '4' : '_', false);
+  setCharAtBuffered(4, loopStates[2] ? '3' : '_', false);
+  setCharAtBuffered(2, loopStates[1] ? '2' : '_', false);
+  setCharAtBuffered(0, loopStates[0] ? '1' : '_', false);
 }
 
 void Display::clear() {
-  lc.clearDisplay(0);
+  clearBuffered();
 }
 
 void Display::setCharAt(uint8_t position, char c) {
-  lc.setChar(0, position, c, false);
+  setCharAtBuffered(position, c, false);
 }
