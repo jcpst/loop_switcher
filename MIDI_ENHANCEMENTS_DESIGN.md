@@ -355,13 +355,15 @@ The display scrolls through these items:
 
 ```cpp
 struct CCSwitch {
-  uint8_t midiChannel;   // 0-15 (MIDI channels 1-16)
+  uint8_t midiChannel;   // 0-15 (stored as 0-based, displayed as 1-16)
   uint8_t ccNumber;      // 0-127
   uint8_t ccOnValue;     // 1-127
   bool isToggle;         // true = toggle, false = momentary
   bool currentState;     // true = on, false = off (for toggle mode)
 };
 ```
+
+**Note**: Throughout this design, MIDI channels are stored as 0-15 (matching the MIDI specification) but displayed to users as 1-16 (user-friendly numbering). This pattern is used for both MIDI Out Channel and per-CC MIDI channels.
 
 ---
 
@@ -574,7 +576,7 @@ CC Preset Byte Format (same as loop preset format):
 
 ```cpp
 // Add to config.h
-const uint8_t EEPROM_MIDI_OUT_CHANNEL_ADDR = 0x00; // MIDI out channel (replaces reserved addr)
+const uint8_t EEPROM_MIDI_OUT_CHANNEL_ADDR = 0x00; // MIDI out channel (was reserved, now repurposed)
 const uint8_t EEPROM_CC_ENABLED_ADDR = 0x82;
 const uint8_t EEPROM_CC_CONFIG_START = 0x83;       // Start of CC switch configs
 const uint8_t EEPROM_CC_CONFIG_SIZE = 4;           // Bytes per switch (channel, number, value, behavior)
