@@ -152,13 +152,13 @@ Current Modes:
 
 New:
 - CC_MODE (for sending CC messages)
-- CC_EDIT_MODE (for editing CC toggle states for a preset)
+- EDIT_MODE (enhanced - now edits both loops AND CC toggle states)
 - GLOBAL_CONFIG_MODE (for all global configuration)
 ```
 
-**Important Distinction**:
-- **CC_EDIT_MODE**: Similar to EDIT_MODE but for CC switches. Allows saving the toggle state of CC switches for a given preset (analogous to saving loop states for a preset).
-- **GLOBAL_CONFIG_MODE**: A global configuration interface for system-wide settings including CC parameters, MIDI settings, and other future configuration options. Since CC mode can be hidden from normal mode cycling, all CC configuration must be accessible through this global mode.
+**Important Changes**:
+- **EDIT_MODE Enhancement**: EDIT_MODE is now unified to handle both loop states and CC toggle states for a preset. Quick press of SW2+SW3 toggles between editing loops and editing CCs. This eliminates the need for a separate CC_EDIT_MODE.
+- **GLOBAL_CONFIG_MODE**: A global configuration interface for system-wide settings including MIDI output channel, CC parameters, and other future configuration options. Since CC mode can be hidden from normal mode cycling, all CC configuration must be accessible through this global mode.
 
 ### CC Mode Behavior
 
@@ -174,33 +174,50 @@ When in CC_MODE:
 - Display shows "CC" when in CC mode
 - LEDs show which switches are currently "on"
 
-### CC Edit Mode
+### Unified Edit Mode
 
-CC_EDIT_MODE allows saving the toggle state of CC switches for a specific preset, similar to how EDIT_MODE saves loop states for presets.
+EDIT_MODE is enhanced to allow editing both loop states and CC toggle states for a preset. This consolidates what were previously two separate edit modes into a single, unified editing experience.
 
-**Concept**: Just as loop presets remember which loops are on/off for each program change, CC presets remember which CC switches are on/off (in toggle mode) for each program change. This allows CC switch states to be recalled along with loop states.
+**Concept**: Each preset stores both loop states (which loops are on/off) and CC toggle states (which CC switches are on/off in toggle mode). When editing a preset, you can configure both aspects before saving.
 
 #### Entry/Exit
 
-- **Enter**: From CC_MODE (after selecting a preset via footswitch or MIDI PC), hold SW2+SW3 for 2 seconds
-- **Exit**: Hold SW2+SW3 for 2 seconds (saves CC toggle states to preset and returns to CC_MODE)
+- **Enter**: From BANK_MODE or CC_MODE (after selecting a preset via footswitch or MIDI PC), hold SW2+SW3 for 2 seconds
+- **Exit**: Hold SW2+SW3 for 2 seconds (saves both loop and CC states to preset and returns to previous mode)
 - **Important**: Can only enter after a specific preset is active (i.e., when `state.activePreset >= 0` and `!state.globalPresetActive`)
+
+#### Toggle Between Loop and CC Editing
+
+- **SW2+SW3 (quick press)**: Toggle between editing loops and editing CC switches
+- Display changes to indicate which is being edited:
+  - "Edit LoP" (editing loops) or "Edit  CC" (editing CC switches)
+  - Scrolling dot animation continues in both modes
 
 #### Behavior
 
-- Press SW1-SW4 to toggle the CC switch states (only affects toggle-mode switches)
-- The current state is saved to the preset when exiting
-- When the preset is recalled (via footswitch or MIDI PC), the saved CC toggle states are restored
-- Display flashes "Edit" with scrolling dot (similar to existing EDIT_MODE)
-- LEDs show the current CC toggle states being edited
+**When editing loops** (default when entering from BANK_MODE):
+- Press SW1-SW4 to toggle individual loop states
+- Relays update in real-time to hear changes
+- LEDs show current loop states
+
+**When editing CC switches** (default when entering from CC_MODE):
+- Press SW1-SW4 to toggle CC switch states (only affects toggle-mode switches)
+- LEDs show current CC toggle states
+- No MIDI messages sent during editing (only when preset is recalled)
+
+**On exit**:
+- Both loop states and CC states are saved to the preset
+- When the preset is recalled (via footswitch or MIDI PC), both loop and CC states are restored
 
 #### Use Case Example
 
-1. Select preset 1 (Bank 1, Switch 1)
-2. Enter CC_EDIT_MODE
-3. Set SW1 ON, SW2 OFF, SW3 ON, SW4 OFF
-4. Exit and save
-5. Later, when preset 1 is recalled, the CC switches will automatically restore to those states
+1. Select preset 1 (Bank 1, Switch 1) in BANK_MODE
+2. Enter EDIT_MODE (hold SW2+SW3 for 2s)
+3. Edit loops: Set Loop1 ON, Loop2 OFF, Loop3 ON, Loop4 OFF
+4. Press SW2+SW3 (quick) to switch to CC editing
+5. Edit CCs: Set CC1 ON, CC2 OFF, CC3 ON, CC4 OFF
+6. Hold SW2+SW3 for 2s to save and exit
+7. Later, when preset 1 is recalled, both loop and CC states are restored
 
 ### Global Configuration Mode
 
@@ -226,69 +243,95 @@ In GLOBAL_CONFIG_MODE:
 The display scrolls through these items:
 
 ```
-1. CC Mode Enable/Disable
-   Display: "CC On" or "CC Off"
+1. MIDI Out Channel
+   Display: "Out  CH" followed by "Ch   nn"
+   Range: 1-16 (MIDI channels)
+   Default: 1 (or last hardware-configured channel)
+   Note: Replaces hardware DIP switch configuration with software setting
+   
+2. CC Mode Enable/Disable
+   Display: "CC On  " or "CC Off "
    Default: OFF
    Note: When OFF, CC mode is hidden from mode cycling
    
-2. SW1 CC Number
+3. SW1 MIDI Channel
+   Display: "C1  CH" followed by "Ch   nn"
+   Range: 1-16
+   Default: 1
+   
+4. SW1 CC Number
    Display: "CC1 nnn"
    Range: 0-127
    Default: 1
    
-3. SW1 CC Value
-   Display: "U1 nnn"
+5. SW1 CC Value
+   Display: "U1  nnn"
    Range: 1-127
    Default: 127
    
-4. SW1 Behavior
+6. SW1 Behavior
    Display: "b1  tGL" (toggle) or "b1  non" (momentary)
    Default: Toggle
    
-5. SW2 CC Number
+7. SW2 MIDI Channel
+   Display: "C2  CH" followed by "Ch   nn"
+   Range: 1-16
+   Default: 1
+   
+8. SW2 CC Number
    Display: "CC2 nnn"
    Range: 0-127
    Default: 2
    
-6. SW2 CC Value
-   Display: "U2 nnn"
+9. SW2 CC Value
+   Display: "U2  nnn"
    Range: 1-127
    Default: 127
    
-7. SW2 Behavior
-   Display: "b2  tGL" or "b2  non"
-   Default: Toggle
-   
-8. SW3 CC Number
-   Display: "CC3 nnn"
-   Range: 0-127
-   Default: 3
-   
-9. SW3 CC Value
-   Display: "U3 nnn"
-   Range: 1-127
-   Default: 127
-   
-10. SW3 Behavior
+10. SW2 Behavior
+    Display: "b2  tGL" or "b2  non"
+    Default: Toggle
+    
+11. SW3 MIDI Channel
+    Display: "C3  CH" followed by "Ch   nn"
+    Range: 1-16
+    Default: 1
+    
+12. SW3 CC Number
+    Display: "CC3 nnn"
+    Range: 0-127
+    Default: 3
+    
+13. SW3 CC Value
+    Display: "U3  nnn"
+    Range: 1-127
+    Default: 127
+    
+14. SW3 Behavior
     Display: "b3  tGL" or "b3  non"
     Default: Toggle
     
-11. SW4 CC Number
+15. SW4 MIDI Channel
+    Display: "C4  CH" followed by "Ch   nn"
+    Range: 1-16
+    Default: 1
+    
+16. SW4 CC Number
     Display: "CC4 nnn"
     Range: 0-127
     Default: 4
     
-12. SW4 CC Value
-    Display: "U4 nnn"
+17. SW4 CC Value
+    Display: "U4  nnn"
     Range: 1-127
     Default: 127
     
-13. SW4 Behavior
+18. SW4 Behavior
     Display: "b4  tGL" or "b4  non"
     Default: Toggle
 ```
 
-Configuration items wrap around (after last item, goes back to first).
+**Navigation Note**: Configuration items do NOT wrap around. When you reach the last item (SW4 Behavior), pressing SW4 does nothing. You must press SW1 to navigate back through the items.
 
 #### Display Format
 
@@ -312,6 +355,7 @@ Configuration items wrap around (after last item, goes back to first).
 
 ```cpp
 struct CCSwitch {
+  uint8_t midiChannel;   // 0-15 (MIDI channels 1-16)
   uint8_t ccNumber;      // 0-127
   uint8_t ccOnValue;     // 1-127
   bool isToggle;         // true = toggle, false = momentary
@@ -329,9 +373,8 @@ struct CCSwitch {
 enum Mode {
   MANUAL_MODE,
   BANK_MODE,
-  EDIT_MODE,
+  EDIT_MODE,        // Now handles both loops and CC editing
   CC_MODE,
-  CC_EDIT_MODE,
   GLOBAL_CONFIG_MODE
 };
 ```
@@ -354,45 +397,38 @@ enum Mode {
          │                 │ SW2+SW3         │ SW2+SW3
          │                 │                 │
          │          ┌──────▼──────┐          │
-         │          │  BANK_MODE  │──────────┘
-         │          └──────┬──────┘
-         │                 │
+         │          │  BANK_MODE  │──────────┼──────┐
+         │          └──────┬──────┘          │      │
+         │                 │                 │      │
          │                 │ SW2+SW3 (2s hold, if preset active)
-         │                 │
-         │          ┌──────▼──────┐
-         │          │ EDIT_MODE   │
-         │          └──────┬──────┘
-         │                 │
-         │                 │ SW2+SW3 (2s hold) → saves
-         │                 │
-         │          ┌──────▼──────────┐
-         │          │ SHOWING_SAVED   │
-         │          └──────┬──────────┘
-         │                 │
-         │                 └──────────►BANK_MODE
+         │                 │                 │      │
+         │          ┌──────▼──────┐          │      │
+         │          │ EDIT_MODE   │◄─────────┼──────┘
+         │          │             │          │  SW2+SW3 (2s hold,
+         │          │ SW2+SW3     │          │   if preset active)
+         │          │ (quick) to  │          │
+         │          │ toggle Loop │          │
+         │          │ vs CC edit  │          │
+         │          └──────┬──────┘          │
+         │                 │                 │
+         │                 │ SW2+SW3 (2s hold) → saves both loop & CC
+         │                 │                 │
+         │          ┌──────▼──────────┐      │
+         │          │ SHOWING_SAVED   │      │
+         │          └──────┬──────────┘      │
+         │                 │                 │
+         │                 └──────────►returns to BANK or CC_MODE
          │
          │          ┌──────────────┐
-         └──────────│   CC_MODE    │◄──────────┐
-                    └──────┬───────┘           │
-                           │                   │
-                           │ SW2+SW3 (2s hold, if preset active)
-                           │                   │
-                    ┌──────▼──────────┐        │
-                    │  CC_EDIT_MODE   │────────┘
-                    └──────┬──────────┘
-                           │
-                           │ SW2+SW3 (2s hold) → saves
-                           │
-                    ┌──────▼──────────┐
-                    │ SHOWING_SAVED   │
-                    └──────┬──────────┘
-                           │
-                           └──────────►CC_MODE
+         └──────────│   CC_MODE    │
+                    └──────────────┘
 ```
 
 **Key Points**:
 - GLOBAL_CONFIG_MODE is accessible from any mode via SW1+SW4 2-second hold
-- CC_EDIT_MODE is entered from CC_MODE (similar to how EDIT_MODE is entered from BANK_MODE)
+- EDIT_MODE is now unified - accessible from both BANK_MODE and CC_MODE
+- Within EDIT_MODE, quick press SW2+SW3 to toggle between editing loops and editing CCs
+- On exit, both loop and CC states are saved to the preset
 - Mode cycling (SW2+SW3 quick press): MANUAL_MODE ↔ BANK_MODE ↔ CC_MODE (if enabled)
 
 ### Mode Cycling
@@ -417,9 +453,8 @@ enum DisplayState {
   SHOWING_BANK,
   FLASHING_PC,
   SHOWING_SAVED,
-  EDIT_MODE_ANIMATED,
+  EDIT_MODE_ANIMATED,      // Enhanced: Shows "Edit LoP" or "Edit  CC"
   SHOWING_CC,              // NEW: Shows "CC" in CC mode
-  CC_EDIT_MODE_ANIMATED,   // NEW: Shows "Edit" in CC edit mode
   SHOWING_GLOBAL_CONFIG,   // NEW: Shows global config item
   SHOWING_CONFIG_SAVED     // NEW: Shows "SAVEd" after global config
 };
@@ -434,11 +469,13 @@ Purpose: Indicate CC mode is active
 LEDs: Show which CC switches are currently "on"
 ```
 
-#### CC_EDIT_MODE_ANIMATED
+#### EDIT_MODE_ANIMATED (Enhanced)
 ```
-Display: "Edit" with scrolling dot animation
-Purpose: Indicate CC edit mode is active (editing CC toggle states for preset)
-LEDs: Show current CC toggle states being edited
+Display: "Edit LoP" (when editing loops) or "Edit  CC" (when editing CC switches)
+Purpose: Indicate edit mode is active and what is being edited
+Animation: Scrolling dot continues in both modes
+LEDs: Show current loop states (when editing loops) or CC toggle states (when editing CCs)
+Toggling: Quick press SW2+SW3 switches between "Edit LoP" and "Edit  CC"
 ```
 
 #### SHOWING_GLOBAL_CONFIG
@@ -484,30 +521,34 @@ Address  | Size | Content              | Notes
 ```
 Address  | Size | Content              | Notes
 ---------|------|----------------------|---------------------------
-0x00     | 1    | (Reserved)           | Reserved for compatibility
+0x00     | 1    | MIDI Out Channel     | 0-15 (MIDI channels 1-16)
 0x01     | 1    | Init Flag (0x42)     | First boot detection
 0x02     | 1    | Preset 1             | Bank 1, Switch 1
 0x03     | 1    | Preset 2             | Bank 1, Switch 2
 ...      | ...  | ...                  | ...
 0x81     | 1    | Preset 128           | Bank 32, Switch 4
 0x82     | 1    | CC Mode Enabled      | 0x00=OFF, 0x01=ON
-0x83     | 1    | SW1 CC Number        | 0-127
-0x84     | 1    | SW1 CC Value         | 1-127
-0x85     | 1    | SW1 Behavior         | 0x00=momentary, 0x01=toggle
-0x86     | 1    | SW2 CC Number        | 0-127
-0x87     | 1    | SW2 CC Value         | 1-127
-0x88     | 1    | SW2 Behavior         | 0x00=momentary, 0x01=toggle
-0x89     | 1    | SW3 CC Number        | 0-127
-0x8A     | 1    | SW3 CC Value         | 1-127
-0x8B     | 1    | SW3 Behavior         | 0x00=momentary, 0x01=toggle
-0x8C     | 1    | SW4 CC Number        | 0-127
-0x8D     | 1    | SW4 CC Value         | 1-127
-0x8E     | 1    | SW4 Behavior         | 0x00=momentary, 0x01=toggle
-0x8F     | 1    | CC Preset 1          | CC toggle states for preset 1
-0x90     | 1    | CC Preset 2          | CC toggle states for preset 2
+0x83     | 1    | SW1 MIDI Channel     | 0-15 (MIDI channels 1-16)
+0x84     | 1    | SW1 CC Number        | 0-127
+0x85     | 1    | SW1 CC Value         | 1-127
+0x86     | 1    | SW1 Behavior         | 0x00=momentary, 0x01=toggle
+0x87     | 1    | SW2 MIDI Channel     | 0-15 (MIDI channels 1-16)
+0x88     | 1    | SW2 CC Number        | 0-127
+0x89     | 1    | SW2 CC Value         | 1-127
+0x8A     | 1    | SW2 Behavior         | 0x00=momentary, 0x01=toggle
+0x8B     | 1    | SW3 MIDI Channel     | 0-15 (MIDI channels 1-16)
+0x8C     | 1    | SW3 CC Number        | 0-127
+0x8D     | 1    | SW3 CC Value         | 1-127
+0x8E     | 1    | SW3 Behavior         | 0x00=momentary, 0x01=toggle
+0x8F     | 1    | SW4 MIDI Channel     | 0-15 (MIDI channels 1-16)
+0x90     | 1    | SW4 CC Number        | 0-127
+0x91     | 1    | SW4 CC Value         | 1-127
+0x92     | 1    | SW4 Behavior         | 0x00=momentary, 0x01=toggle
+0x93     | 1    | CC Preset 1          | CC toggle states for preset 1
+0x94     | 1    | CC Preset 2          | CC toggle states for preset 2
 ...      | ...  | ...                  | ...
-0x10E    | 1    | CC Preset 128        | CC toggle states for preset 128
-0x10F-   | 753  | Unused               | Available for future use
+0x112    | 1    | CC Preset 128        | CC toggle states for preset 128
+0x113-   | 748  | Unused               | Available for future use
 0x3FF    |      |                      |
 
 CC Preset Byte Format (same as loop preset format):
@@ -518,28 +559,35 @@ CC Preset Byte Format (same as loop preset format):
   Bits 4-7: Unused (reserved for future)
 ```
 
-**Total CC Configuration**: 13 bytes (global config at 0x82-0x8E)
-**Total CC Preset States**: 128 bytes (1 byte per preset at 0x8F-0x10E)
-**Total New EEPROM Usage**: 141 bytes
-**Remaining Available**: 753 bytes (0x10F-0x3FF)
+**Total Global Configuration**: 18 bytes
+- MIDI Out Channel: 1 byte (at 0x00)
+- CC Mode Enabled: 1 byte (at 0x82)
+- CC Switch Configs: 16 bytes (4 bytes × 4 switches at 0x83-0x92)
 
-**Note on Address 0x00**: This address remains reserved for backward compatibility. In earlier firmware versions, it stored the MIDI channel. Since MIDI channel is now hardware-configured via DIP switches (read at startup), this address is no longer used but is kept reserved to avoid potential conflicts if old EEPROM data is present. Future firmware could repurpose this address if needed.
+**Total CC Preset States**: 128 bytes (1 byte per preset at 0x93-0x112)
+**Total New EEPROM Usage**: 146 bytes (18 config + 128 preset states)
+**Remaining Available**: 748 bytes (0x113-0x3FF)
+
+**Note on Address 0x00**: This address is now repurposed to store the MIDI Out Channel (software configuration), replacing the hardware DIP switch method. This provides more flexibility and allows users to change the MIDI channel without opening the device.
 
 ### EEPROM Constants
 
 ```cpp
 // Add to config.h
+const uint8_t EEPROM_MIDI_OUT_CHANNEL_ADDR = 0x00; // MIDI out channel (replaces reserved addr)
 const uint8_t EEPROM_CC_ENABLED_ADDR = 0x82;
-const uint8_t EEPROM_CC_CONFIG_START = 0x83;     // Start of CC switch configs
-const uint8_t EEPROM_CC_CONFIG_SIZE = 3;         // Bytes per switch (number, value, behavior)
-const uint8_t EEPROM_CC_PRESETS_START = 0x8F;    // Start of CC preset states (0x8F)
-const uint16_t EEPROM_CC_PRESETS_END = 0x10E;    // End of CC preset states (0x8F + 127 = 0x10E)
+const uint8_t EEPROM_CC_CONFIG_START = 0x83;       // Start of CC switch configs
+const uint8_t EEPROM_CC_CONFIG_SIZE = 4;           // Bytes per switch (channel, number, value, behavior)
+const uint8_t EEPROM_CC_PRESETS_START = 0x93;      // Start of CC preset states (0x93)
+const uint16_t EEPROM_CC_PRESETS_END = 0x112;      // End of CC preset states (0x93 + 127 = 0x112)
 
 // Default values
-const uint8_t DEFAULT_CC_ENABLED = 0;            // OFF by default
-const uint8_t DEFAULT_CC_NUMBER_BASE = 1;        // CC 1, 2, 3, 4 for SW1-4
-const uint8_t DEFAULT_CC_VALUE = 127;            // Full value
-const uint8_t DEFAULT_CC_BEHAVIOR = 1;           // Toggle mode
+const uint8_t DEFAULT_MIDI_OUT_CHANNEL = 0;        // MIDI channel 0 (displayed as 1)
+const uint8_t DEFAULT_CC_ENABLED = 0;              // OFF by default
+const uint8_t DEFAULT_CC_CHANNEL = 0;              // MIDI channel 0 (displayed as 1)
+const uint8_t DEFAULT_CC_NUMBER_BASE = 1;          // CC 1, 2, 3, 4 for SW1-4
+const uint8_t DEFAULT_CC_VALUE = 127;              // Full value
+const uint8_t DEFAULT_CC_BEHAVIOR = 1;             // Toggle mode
 ```
 
 ---
@@ -717,21 +765,25 @@ When DEBUG_MODE is enabled:
 enum Mode {
   MANUAL_MODE,
   BANK_MODE,
-  EDIT_MODE,
+  EDIT_MODE,           // Enhanced: now edits both loops and CCs
   CC_MODE,
-  CC_EDIT_MODE,
   GLOBAL_CONFIG_MODE
 };
 
-// CC configuration constants
+// MIDI and CC configuration constants (from EEPROM section above)
+const uint8_t EEPROM_MIDI_OUT_CHANNEL_ADDR = 0x00;
 const uint8_t EEPROM_CC_ENABLED_ADDR = 0x82;
 const uint8_t EEPROM_CC_CONFIG_START = 0x83;
-const uint8_t EEPROM_CC_CONFIG_SIZE = 3;
+const uint8_t EEPROM_CC_CONFIG_SIZE = 4;        // Now 4 bytes per switch
+const uint8_t EEPROM_CC_PRESETS_START = 0x93;
+const uint16_t EEPROM_CC_PRESETS_END = 0x112;
+const uint8_t DEFAULT_MIDI_OUT_CHANNEL = 0;
 const uint8_t DEFAULT_CC_ENABLED = 0;
+const uint8_t DEFAULT_CC_CHANNEL = 0;
 const uint8_t DEFAULT_CC_NUMBER_BASE = 1;
 const uint8_t DEFAULT_CC_VALUE = 127;
 const uint8_t DEFAULT_CC_BEHAVIOR = 1;
-const uint16_t CC_EDIT_LONG_PRESS_MS = 2000;
+const uint16_t EDIT_MODE_TOGGLE_DEBOUNCE_MS = 300;  // Debounce for SW2+SW3 quick press
 const uint16_t GLOBAL_CONFIG_LONG_PRESS_MS = 2000;
 ```
 
@@ -742,9 +794,13 @@ class StateManager {
 public:
   // ... existing members ...
   
+  // MIDI configuration
+  uint8_t midiOutChannel;  // 0-15 (MIDI channels 1-16), software-configurable
+  
   // CC Mode
   bool ccModeEnabled;
   struct CCSwitch {
+    uint8_t midiChannel;   // 0-15 (MIDI channels 1-16)
     uint8_t ccNumber;
     uint8_t ccOnValue;
     bool isToggle;
@@ -755,23 +811,26 @@ public:
   // Global configuration
   uint8_t globalConfigItem;
   Mode previousMode;  // For returning from GLOBAL_CONFIG_MODE
-                      // CRITICAL: If entering GLOBAL_CONFIG_MODE from an editing mode
-                      // (EDIT_MODE or CC_EDIT_MODE), previousMode MUST be set to
-                      // the parent mode (BANK_MODE or CC_MODE) not the edit mode,
-                      // to prevent returning to a potentially invalid edit state
+                      // CRITICAL: If entering GLOBAL_CONFIG_MODE from EDIT_MODE,
+                      // previousMode MUST be set to the parent mode (BANK_MODE or CC_MODE)
+                      // not EDIT_MODE itself, to prevent returning to invalid edit state
   
-  // CC Edit Mode
-  bool ccEditModeStates[4];  // Editing CC toggle states for preset
+  // Unified Edit Mode
+  bool editingLoops;  // true = editing loops, false = editing CCs
+  bool editModeLoopStates[4];  // Editing loop states for preset
+  bool editModeCCStates[4];    // Editing CC toggle states for preset
   
   // Configuration methods
+  void loadMidiOutChannel();
+  void saveMidiOutChannel();
   void loadCCConfig();
   void saveCCConfig();
   void resetCCConfig();
   bool isCCModeEnabled();
   
-  // CC preset state methods
-  void saveCCPreset(uint8_t presetNumber);
-  void loadCCPreset(uint8_t presetNumber);
+  // Preset state methods (now save both loops and CCs)
+  void savePreset(uint8_t presetNumber);  // Saves both loop and CC states
+  void loadPreset(uint8_t presetNumber);  // Loads both loop and CC states
 };
 ```
 
@@ -815,10 +874,14 @@ private:
 
 When updating firmware with these changes:
 
-1. Existing preset data (addresses 0x02-0x81) is preserved
-2. New CC configuration area starts at 0x82 (previously unused)
-3. No migration needed - new areas auto-initialize to defaults
-4. Init flag at 0x01 remains unchanged
+1. **Address 0x00**: Now stores MIDI Out Channel (was reserved/unused)
+   - On first boot, read hardware DIP switches one last time and store to 0x00
+   - Subsequent boots read from EEPROM, allowing software configuration
+   - DIP switches can be removed from hardware after migration
+2. Existing preset data (addresses 0x02-0x81) is preserved
+3. New CC configuration area starts at 0x82 (previously unused)
+4. No migration needed for CC areas - auto-initialize to defaults
+5. Init flag at 0x01 remains unchanged
 
 ### Backward Compatibility
 
