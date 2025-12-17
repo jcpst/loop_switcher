@@ -123,3 +123,17 @@ Debug output includes:
 - MIDI channel configuration
 
 Only enable debug mode during development when MIDI output is not needed.
+
+## License
+
+This project is licensed under a **Non-Commercial License with Author Exception**.
+
+**Key points:**
+- ✅ Free to use for personal, educational, and non-commercial purposes
+- ✅ Free to modify and distribute for non-commercial purposes
+- ❌ Commercial use is strictly forbidden without explicit permission
+- The original author (jcpst) retains exclusive rights for commercial use
+
+See the [LICENSE](LICENSE) file for full details.
+
+For commercial licensing inquiries, please contact the copyright holder.
