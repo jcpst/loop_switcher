@@ -1,13 +1,14 @@
 #include "display.h"
 
-// Sentinel value for blank/uninitialized display positions
-#define BLANK_VALUE 0xFE
+// Sentinel values for display buffer management
+#define BLANK_VALUE 0xFE   // Represents a blank/cleared display position
+#define INIT_VALUE 0xFF    // Initial invalid value to force first update
 
 Display::Display(uint8_t dinPin, uint8_t clkPin, uint8_t csPin)
   : lc(dinPin, clkPin, csPin, 1), bufferInitialized(false) {
-  // Initialize buffers to sentinel value
+  // Initialize buffers to force initial update
   for (uint8_t i = 0; i < DISPLAY_DIGITS; i++) {
-    digitBuffer[i] = 0xFF;  // Invalid value to force initial update
+    digitBuffer[i] = INIT_VALUE;  // Force update on first use
     isDigitBuffer[i] = false;
     decimalBuffer[i] = false;
   }
@@ -30,7 +31,7 @@ void Display::setCharAtBuffered(uint8_t position, char c, bool dp) {
   uint8_t charValue = (uint8_t)c;
   
   // Update only if the character, type, or decimal point changed
-  if (digitBuffer[position] != charValue || isDigitBuffer[position] != false || decimalBuffer[position] != dp) {
+  if (digitBuffer[position] != charValue || isDigitBuffer[position] || decimalBuffer[position] != dp) {
     lc.setChar(0, position, c, dp);
     digitBuffer[position] = charValue;
     isDigitBuffer[position] = false;  // Mark as character, not digit
@@ -46,7 +47,7 @@ void Display::setDigitAtBuffered(uint8_t position, uint8_t digit, bool dp) {
   }
   
   // Update only if the digit, type, or decimal point changed
-  if (digitBuffer[position] != digit || isDigitBuffer[position] != true || decimalBuffer[position] != dp) {
+  if (digitBuffer[position] != digit || !isDigitBuffer[position] || decimalBuffer[position] != dp) {
     lc.setDigit(0, position, digit, dp);
     digitBuffer[position] = digit;
     isDigitBuffer[position] = true;  // Mark as digit, not character
