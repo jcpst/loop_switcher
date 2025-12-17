@@ -23,15 +23,10 @@ void Display::begin() {
 
 // Buffered setChar - only updates if value changed
 void Display::setCharAtBuffered(uint8_t position, char c, bool dp) {
-  if (!bufferInitialized) {
-    lc.setChar(0, position, c, dp);
-    return;
-  }
-  
   uint8_t charValue = (uint8_t)c;
   
-  // Update only if the character, type, or decimal point changed
-  if (digitBuffer[position] != charValue || isDigitBuffer[position] || decimalBuffer[position] != dp) {
+  // Update only if the character, type, or decimal point changed (or buffer not initialized)
+  if (!bufferInitialized || digitBuffer[position] != charValue || isDigitBuffer[position] || decimalBuffer[position] != dp) {
     lc.setChar(0, position, c, dp);
     digitBuffer[position] = charValue;
     isDigitBuffer[position] = false;  // Mark as character, not digit
@@ -41,13 +36,8 @@ void Display::setCharAtBuffered(uint8_t position, char c, bool dp) {
 
 // Buffered setDigit - only updates if value changed
 void Display::setDigitAtBuffered(uint8_t position, uint8_t digit, bool dp) {
-  if (!bufferInitialized) {
-    lc.setDigit(0, position, digit, dp);
-    return;
-  }
-  
-  // Update only if the digit, type, or decimal point changed
-  if (digitBuffer[position] != digit || !isDigitBuffer[position] || decimalBuffer[position] != dp) {
+  // Update only if the digit, type, or decimal point changed (or buffer not initialized)
+  if (!bufferInitialized || digitBuffer[position] != digit || !isDigitBuffer[position] || decimalBuffer[position] != dp) {
     lc.setDigit(0, position, digit, dp);
     digitBuffer[position] = digit;
     isDigitBuffer[position] = true;  // Mark as digit, not character
@@ -59,6 +49,12 @@ void Display::setDigitAtBuffered(uint8_t position, uint8_t digit, bool dp) {
 void Display::clearBuffered() {
   if (!bufferInitialized) {
     lc.clearDisplay(0);
+    // Mark all positions as blank in buffer
+    for (uint8_t i = 0; i < DISPLAY_DIGITS; i++) {
+      digitBuffer[i] = BLANK_VALUE;
+      isDigitBuffer[i] = false;
+      decimalBuffer[i] = false;
+    }
     return;
   }
   
