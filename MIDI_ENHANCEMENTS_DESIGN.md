@@ -546,19 +546,21 @@ Address  | Size | Content              | Notes
 0x90     | 1    | SW4 CC Number        | 0-127
 0x91     | 1    | SW4 CC Value         | 1-127
 0x92     | 1    | SW4 Behavior         | 0x00=momentary, 0x01=toggle
-0x93     | 1    | CC Preset 1          | CC toggle states for preset 1
-0x94     | 1    | CC Preset 2          | CC toggle states for preset 2
-...      | ...  | ...                  | ...
-0x112    | 1    | CC Preset 128        | CC toggle states for preset 128
-0x113-   | 748  | Unused               | Available for future use
+0x93-    | 876  | Unused               | Available for future use
 0x3FF    |      |                      |
 
-CC Preset Byte Format (same as loop preset format):
-  Bit 0: SW1 CC toggle state (1=on, 0=off)
-  Bit 1: SW2 CC toggle state
-  Bit 2: SW3 CC toggle state
-  Bit 3: SW4 CC toggle state
-  Bits 4-7: Unused (reserved for future)
+Preset Byte Format (Enhanced):
+  Bit 0: Loop 1 state (1=on, 0=off)
+  Bit 1: Loop 2 state
+  Bit 2: Loop 3 state
+  Bit 3: Loop 4 state
+  Bit 4: SW1 CC toggle state (1=on, 0=off)
+  Bit 5: SW2 CC toggle state
+  Bit 6: SW3 CC toggle state
+  Bit 7: SW4 CC toggle state
+  
+Note: Loop states and CC toggle states are now stored together in the same
+byte (addresses 0x02-0x81), utilizing the previously unused upper 4 bits.
 ```
 
 **Total Global Configuration**: 18 bytes
@@ -566,9 +568,11 @@ CC Preset Byte Format (same as loop preset format):
 - CC Mode Enabled: 1 byte (at 0x82)
 - CC Switch Configs: 16 bytes (4 bytes × 4 switches at 0x83-0x92)
 
-**Total CC Preset States**: 128 bytes (1 byte per preset at 0x93-0x112)
-**Total New EEPROM Usage**: 146 bytes (18 config + 128 preset states)
-**Remaining Available**: 748 bytes (0x113-0x3FF)
+**CC Preset States**: Stored in existing preset bytes (0x02-0x81) using bits 4-7
+- No additional EEPROM space required - uses previously unused upper 4 bits
+
+**Total New EEPROM Usage**: 18 bytes (global config only)
+**Remaining Available**: 876 bytes (0x93-0x3FF)
 
 **Note on Address 0x00**: This address stores the MIDI Out Channel (software configuration). This provides flexibility to change the MIDI channel through the configuration interface.
 
@@ -580,8 +584,10 @@ const uint8_t EEPROM_MIDI_OUT_CHANNEL_ADDR = 0x00; // MIDI out channel (was rese
 const uint8_t EEPROM_CC_ENABLED_ADDR = 0x82;
 const uint8_t EEPROM_CC_CONFIG_START = 0x83;       // Start of CC switch configs
 const uint8_t EEPROM_CC_CONFIG_SIZE = 4;           // Bytes per switch (channel, number, value, behavior)
-const uint8_t EEPROM_CC_PRESETS_START = 0x93;      // Start of CC preset states (0x93)
-const uint16_t EEPROM_CC_PRESETS_END = 0x112;      // End of CC preset states (0x93 + 127 = 0x112)
+
+// CC preset states are stored in bits 4-7 of existing preset bytes (0x02-0x81)
+// No separate EEPROM addresses needed
+const uint8_t CC_TOGGLE_STATE_BIT_OFFSET = 4;      // CC states start at bit 4
 
 // Default values
 const uint8_t DEFAULT_MIDI_OUT_CHANNEL = 0;        // MIDI channel 0 (displayed as 1)
@@ -880,7 +886,10 @@ When updating firmware with these changes:
    - Defaults to MIDI channel 1 on first boot
    - All subsequent boots read from EEPROM
    - User can change via GLOBAL_CONFIG_MODE
-2. Existing preset data (addresses 0x02-0x81) is preserved
+2. **Existing preset data (addresses 0x02-0x81)**: Bits 0-3 preserved (loop states)
+   - Bits 4-7 (previously unused) now store CC toggle states
+   - Existing loop presets remain functional
+   - CC states default to 0 (all off) until configured
 3. New CC configuration area starts at 0x82 (previously unused)
 4. No migration needed for CC areas - auto-initialize to defaults
 5. Init flag at 0x01 remains unchanged
