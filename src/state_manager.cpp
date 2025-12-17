@@ -85,7 +85,7 @@ void StateManager::savePreset(uint8_t presetNumber) {
     DEBUG_PRINT("Saving preset ");
     DEBUG_PRINT(presetNumber);
     DEBUG_PRINT(" with state: 0x");
-    DEBUG_PRINTLN(packedState);
+    DEBUG_PRINTLN(packedState, HEX);
     EEPROM.write(EEPROM_PRESETS_START_ADDR + presetNumber - 1, packedState);
   }
 }
@@ -99,7 +99,7 @@ void StateManager::loadPreset(uint8_t presetNumber) {
   DEBUG_PRINT("Loading preset ");
   DEBUG_PRINT(presetNumber);
   DEBUG_PRINT(" with state: 0x");
-  DEBUG_PRINTLN(packedState);
+  DEBUG_PRINTLN(packedState, HEX);
 
   // Unpack into loop states
   for (int i = 0; i < NUM_LOOPS; i++) {
