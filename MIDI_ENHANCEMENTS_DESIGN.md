@@ -76,17 +76,14 @@ private:
 
 ```cpp
 // In main.cpp loop():
-midiInput.poll();
-if (midiInput.hasProgramChange()) {
-  uint8_t pc = midiInput.getProgramChange();
-  midiInput.clearProgramChange();
-  
-  // Ignore MIDI PC messages if in global configuration mode
-  if (state.currentMode == GLOBAL_CONFIG_MODE) {
-    return;
-  }
-  
-  if (pc >= 1 && pc <= TOTAL_PRESETS) {
+// Ignore MIDI PC messages if in global configuration mode
+if (state.currentMode != GLOBAL_CONFIG_MODE) {
+  midiInput.poll();
+  if (midiInput.hasProgramChange()) {
+    uint8_t pc = midiInput.getProgramChange();
+    midiInput.clearProgramChange();
+    
+    if (pc >= 1 && pc <= TOTAL_PRESETS) {
     // Stay in current mode - do NOT auto-switch to BANK_MODE
     // Just load the preset and update display
     
@@ -103,9 +100,15 @@ if (midiInput.hasProgramChange()) {
     state.flashingPC = pc;
     state.displayState = FLASHING_PC;
     state.pcFlashStartTime = millis();
+    }
   }
 }
 ```
+
+**Mode Context Handling**: When PC is received in any mode (MANUAL, BANK, CC), the bank and preset context variables are updated but the mode is not changed. This allows:
+- In MANUAL_MODE: Preset loaded, loops update, but stay in manual control
+- In BANK_MODE: Preset loaded and displayed (natural behavior)
+- In CC_MODE: Preset loaded, loops update, and CC toggle states restored if saved
 
 #### MIDI Message Format
 
@@ -117,11 +120,13 @@ if (midiInput.hasProgramChange()) {
 
 1. **Channel Filtering**: Only respond to PC messages on the configured MIDI channel
 2. **Mode Preservation**: Stay in the current mode when PC received (do NOT auto-switch modes)
-3. **Global Config Protection**: Ignore all incoming PC messages when in GLOBAL_CONFIG_MODE
-4. **Out of Range**: Ignore PC messages < 1 or > 128
-5. **Display Feedback**: Flash the received PC number (same as when switch pressed)
-6. **Relay Update**: Immediately apply the preset to relays
-7. **LED Update**: Update status LEDs to reflect new preset
+3. **Global Config Protection**: Skip MIDI polling entirely when in GLOBAL_CONFIG_MODE to avoid processing overhead
+4. **Context Updates**: Update bank and preset context in all modes (allows preset recall in MANUAL or CC modes)
+5. **Out of Range**: Ignore PC messages < 1 or > 128
+6. **Display Feedback**: Flash the received PC number (same as when switch pressed)
+7. **Relay Update**: Immediately apply the preset to relays
+8. **LED Update**: Update status LEDs to reflect new preset
+9. **CC State Restore**: In CC_MODE, also restore CC toggle states if saved for the preset
 
 ### Error Handling
 
@@ -179,7 +184,7 @@ CC_EDIT_MODE allows saving the toggle state of CC switches for a specific preset
 
 - **Enter**: From CC_MODE (after selecting a preset via footswitch or MIDI PC), hold SW2+SW3 for 2 seconds
 - **Exit**: Hold SW2+SW3 for 2 seconds (saves CC toggle states to preset and returns to CC_MODE)
-- **Important**: Can only enter after a preset is active (not when in global preset mode)
+- **Important**: Can only enter after a specific preset is active (i.e., when `state.activePreset >= 0` and `!state.globalPresetActive`)
 
 #### Behavior
 
@@ -499,8 +504,8 @@ Address  | Size | Content              | Notes
 0x8F     | 1    | CC Preset 1          | CC toggle states for preset 1
 0x90     | 1    | CC Preset 2          | CC toggle states for preset 2
 ...      | ...  | ...                  | ...
-0x16E    | 1    | CC Preset 128        | CC toggle states for preset 128
-0x16F-   | 656  | Unused               | Available for future use
+0x10E    | 1    | CC Preset 128        | CC toggle states for preset 128
+0x10F-   | 753  | Unused               | Available for future use
 0x3FF    |      |                      |
 
 CC Preset Byte Format (same as loop preset format):
@@ -511,10 +516,10 @@ CC Preset Byte Format (same as loop preset format):
   Bits 4-7: Unused (reserved for future)
 ```
 
-**Total CC Configuration**: 13 bytes (global config)
-**Total CC Preset States**: 128 bytes (1 byte per preset)
+**Total CC Configuration**: 13 bytes (global config at 0x82-0x8E)
+**Total CC Preset States**: 128 bytes (1 byte per preset at 0x8F-0x10E)
 **Total New EEPROM Usage**: 141 bytes
-**Remaining Available**: 656 bytes
+**Remaining Available**: 753 bytes (0x10F-0x3FF)
 
 **Note on Address 0x00**: This address remains reserved for backward compatibility. In earlier firmware versions, it stored the MIDI channel. Since MIDI channel is now hardware-configured via DIP switches (read at startup), this address is no longer used but is kept reserved to avoid potential conflicts if old EEPROM data is present. Future firmware could repurpose this address if needed.
 
@@ -525,8 +530,8 @@ CC Preset Byte Format (same as loop preset format):
 const uint8_t EEPROM_CC_ENABLED_ADDR = 0x82;
 const uint8_t EEPROM_CC_CONFIG_START = 0x83;     // Start of CC switch configs
 const uint8_t EEPROM_CC_CONFIG_SIZE = 3;         // Bytes per switch (number, value, behavior)
-const uint8_t EEPROM_CC_PRESETS_START = 0x8F;    // Start of CC preset states
-const uint16_t EEPROM_CC_PRESETS_END = 0x16E;    // End of CC preset states
+const uint8_t EEPROM_CC_PRESETS_START = 0x8F;    // Start of CC preset states (0x8F)
+const uint16_t EEPROM_CC_PRESETS_END = 0x10E;    // End of CC preset states (0x10E = 0x8F + 128 - 1)
 
 // Default values
 const uint8_t DEFAULT_CC_ENABLED = 0;            // OFF by default
@@ -748,6 +753,9 @@ public:
   // Global configuration
   uint8_t globalConfigItem;
   Mode previousMode;  // For returning from GLOBAL_CONFIG_MODE
+                      // Note: If entering GLOBAL_CONFIG_MODE from an editing mode
+                      // (EDIT_MODE or CC_EDIT_MODE), previousMode should be set to
+                      // the parent mode (BANK_MODE or CC_MODE) not the edit mode
   
   // CC Edit Mode
   bool ccEditModeStates[4];  // Editing CC toggle states for preset
