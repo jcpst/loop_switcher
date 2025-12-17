@@ -12,22 +12,33 @@ StateManager::StateManager()
     editModeLoopStates{false, false, false, false},
     editModeAnimFrame(0),
     pcFlashStartTime(0),
-    channelModeStartTime(0),
     editModeAnimTime(0),
     savedDisplayStartTime(0),
     flashingPC(0) {
 }
 
+uint8_t StateManager::readMidiChannelFromHardware() {
+  // Read 4-bit binary value from footswitch pins (used as DIP switch inputs during setup)
+  // SW1=bit0, SW2=bit1, SW3=bit2, SW4=bit3
+  // Binary value 0-15 represents MIDI channels 0-15 (displayed as 1-16)
+  uint8_t binaryValue = 0;
+  
+  // Read each pin - switches are active LOW with pullups
+  // So if DIP switch is ON (connecting to ground), pin reads LOW (0)
+  // If DIP switch is OFF (open), pin reads HIGH (1) due to pullup
+  // We want ON switch to contribute to binary value, so invert the reading
+  if (digitalRead(SW1_PIN) == LOW) binaryValue |= (1 << 0);  // Bit 0
+  if (digitalRead(SW2_PIN) == LOW) binaryValue |= (1 << 1);  // Bit 1
+  if (digitalRead(SW3_PIN) == LOW) binaryValue |= (1 << 2);  // Bit 2
+  if (digitalRead(SW4_PIN) == LOW) binaryValue |= (1 << 3);  // Bit 3
+  
+  // Return MIDI channel 0-15
+  return binaryValue;
+}
+
 void StateManager::initialize() {
-  // Load MIDI channel from EEPROM
-  uint8_t storedChannel = EEPROM.read(EEPROM_CHANNEL_ADDR);
-  if (storedChannel >= 1 && storedChannel <= 16) {
-    midiChannel = storedChannel;
-  } else {
-    // Invalid channel - set to default and write to EEPROM
-    midiChannel = DEFAULT_MIDI_CHANNEL;
-    EEPROM.write(EEPROM_CHANNEL_ADDR, midiChannel);
-  }
+  // Read MIDI channel from DIP switches on footswitch pins
+  midiChannel = readMidiChannelFromHardware();
 
   // Check if EEPROM has been initialized
   uint8_t initFlag = EEPROM.read(EEPROM_INIT_FLAG_ADDR);

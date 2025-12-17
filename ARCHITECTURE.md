@@ -58,20 +58,7 @@
          │                 │
          │          ┌──────▼──────┐
          │          │  BANK_MODE  │
-         │          └──────┬──────┘
-         │                 │
-         │ SW1+SW4         │         Exit
-         │ (long press)    │         SW2+SW3
-         │          ┌──────▼──────────┐
-         └──────────│ CHANNEL_SET_    │
-                    │     MODE        │
-                    └─────────────────┘
-                           │
-                           │ (5s timeout)
-                           │
-                    ┌──────▼──────┐
-                    │  BANK_MODE  │
-                    └─────────────┘
+         │          └─────────────┘
 ```
 
 ### Display States
@@ -93,9 +80,6 @@ EDIT_MODE ──────────► EDIT_MODE_ANIMATED
     └─ Exit ─────────► SHOWING_SAVED
                       (Shows: "SAvEd" for 2s)
                       └─► Returns to SHOWING_BANK
-
-CHANNEL_SET_MODE ───► SHOWING_CHANNEL
-                      (Shows: "Chan 01" - "Chan 16")
 ```
 
 ---
@@ -107,7 +91,7 @@ CHANNEL_SET_MODE ───► SHOWING_CHANNEL
 ```
 Address  | Size | Content              | Notes
 ---------|------|----------------------|---------------------------
-0x00     | 1    | MIDI Channel (1-16)  | Validated on read
+0x00     | 1    | (Reserved)           | Previously MIDI channel
 0x01     | 1    | Init Flag (0x42)     | First boot detection
 0x02     | 1    | Preset 1             | Bank 1, Switch 1
 0x03     | 1    | Preset 2             | Bank 1, Switch 2
@@ -235,6 +219,53 @@ Notes:
 - A0-A2 used as digital outputs for shift register
 - All switches use internal pullups (active LOW)
 - D13 shared with built-in LED (CONFLICT - see review!)
+- D2/D4/D5/D6 (SW1-4) also used for DIP switch MIDI channel config during setup
+```
+
+---
+
+## MIDI Channel Configuration
+
+The MIDI output channel is configured using 4 DIP switches connected to the footswitch pins (D2, D4, D5, D6). The switches are read once during setup() before the main loop begins, so there is no conflict with footswitch operation.
+
+### Hardware Configuration
+
+```
+DIP Switch Wiring:
+- Each DIP switch connects a footswitch pin to ground when ON
+- Internal pullups keep pins HIGH when switches are OFF
+- Read during setup() only, before main loop
+
+Pin Mapping:
+- SW1 pin (D2): Bit 0 (LSB) - value 1
+- SW2 pin (D4): Bit 1       - value 2  
+- SW3 pin (D5): Bit 2       - value 4
+- SW4 pin (D6): Bit 3 (MSB) - value 8
+
+Binary to MIDI Channel Mapping:
+- b0000 (0)  → MIDI Channel 0 (displayed as Channel 1)
+- b0001 (1)  → MIDI Channel 1 (displayed as Channel 2)
+- b0010 (2)  → MIDI Channel 2 (displayed as Channel 3)
+- ...
+- b1111 (15) → MIDI Channel 15 (displayed as Channel 16)
+
+Note: MIDI channels are 0-15 internally (per MIDI specification), but displayed as 1-16 for user convenience.
+```
+
+### Reading Algorithm
+
+```cpp
+uint8_t readMidiChannelFromHardware() {
+  uint8_t binaryValue = 0;
+  
+  // DIP switches pull pins LOW when ON
+  if (digitalRead(SW1_PIN) == LOW) binaryValue |= (1 << 0);
+  if (digitalRead(SW2_PIN) == LOW) binaryValue |= (1 << 1);
+  if (digitalRead(SW3_PIN) == LOW) binaryValue |= (1 << 2);
+  if (digitalRead(SW4_PIN) == LOW) binaryValue |= (1 << 3);
+  
+  return binaryValue;  // Returns MIDI channel 0-15
+}
 ```
 
 ---

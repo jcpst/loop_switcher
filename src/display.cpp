@@ -28,10 +28,6 @@ void Display::update(DisplayState state, uint8_t value, bool loopStates[4], bool
       displaySaved();
       break;
 
-    case SHOWING_CHANNEL:
-      displayChannel(value);
-      break;
-
     case EDIT_MODE_ANIMATED:
       displayEdit(animFrame);
       break;
