@@ -81,7 +81,7 @@ if (midiInput.hasProgramChange()) {
   uint8_t pc = midiInput.getProgramChange();
   midiInput.clearProgramChange();
   
-  if (pc >= 1 && pc <= 128) {
+  if (pc >= 1 && pc <= TOTAL_PRESETS) {
     // Switch to bank mode if not already
     if (state.currentMode != BANK_MODE) {
       state.currentMode = BANK_MODE;
@@ -89,8 +89,8 @@ if (midiInput.hasProgramChange()) {
     }
     
     // Calculate bank and preset (PC 1-128)
-    uint8_t bank = (pc - 1) / 4 + 1;      // Banks 1-32
-    uint8_t preset = (pc - 1) % 4;        // Presets 0-3
+    uint8_t bank = (pc - 1) / PRESETS_PER_BANK + 1;      // Banks 1-32
+    uint8_t preset = (pc - 1) % PRESETS_PER_BANK;        // Presets 0-3
     
     state.currentBank = bank;
     state.activePreset = preset;
@@ -199,7 +199,7 @@ The display scrolls through these items:
    Default: 127
    
 4. SW1 Behavior
-   Display: "b1 toG" (toggle) or "b1 non" (momentary)
+   Display: "b1  tGL" (toggle) or "b1  non" (momentary)
    Default: Toggle
    
 5. SW2 CC Number
@@ -213,7 +213,7 @@ The display scrolls through these items:
    Default: 127
    
 7. SW2 Behavior
-   Display: "b2 toG" or "b2 non"
+   Display: "b2  tGL" or "b2  non"
    Default: Toggle
    
 8. SW3 CC Number
@@ -227,7 +227,7 @@ The display scrolls through these items:
    Default: 127
    
 10. SW3 Behavior
-    Display: "b3 toG" or "b3 non"
+    Display: "b3  tGL" or "b3  non"
     Default: Toggle
     
 11. SW4 CC Number
@@ -241,7 +241,7 @@ The display scrolls through these items:
     Default: 127
     
 13. SW4 Behavior
-    Display: "b4 toG" or "b4 non"
+    Display: "b4  tGL" or "b4  non"
     Default: Toggle
 ```
 
@@ -254,7 +254,8 @@ Configuration items wrap around (after last item, goes back to first).
 - **Examples**:
   - "CC1  12" - SW1 CC number is 12
   - "U1  127" - SW1 value is 127
-  - "b1  toG" - SW1 behavior is toggle
+  - "b1  tGL" - SW1 behavior is toggle
+  - "b1  non" - SW1 behavior is momentary
   - "CC Off " - CC mode is disabled
 
 ### MIDI CC Message Format
@@ -376,7 +377,7 @@ Display varies by config item:
 - "CC On  " or "CC Off "
 - "CC1  12" (CC number for switch 1)
 - "U1  127" (CC value for switch 1)
-- "b1  toG" (behavior: toggle)
+- "b1  tGL" (behavior: toggle)
 - "b1  non" (behavior: momentary)
 - Similar for switches 2-4
 ```
@@ -390,7 +391,7 @@ Display varies by config item:
 ```
 Address  | Size | Content              | Notes
 ---------|------|----------------------|---------------------------
-0x00     | 1    | (Reserved)           | Previously MIDI channel
+0x00     | 1    | (Reserved)           | Reserved for compatibility
 0x01     | 1    | Init Flag (0x42)     | First boot detection
 0x02     | 1    | Preset 1             | Bank 1, Switch 1
 0x03     | 1    | Preset 2             | Bank 1, Switch 2
@@ -405,7 +406,7 @@ Address  | Size | Content              | Notes
 ```
 Address  | Size | Content              | Notes
 ---------|------|----------------------|---------------------------
-0x00     | 1    | (Reserved)           | Previously MIDI channel
+0x00     | 1    | (Reserved)           | Reserved for compatibility
 0x01     | 1    | Init Flag (0x42)     | First boot detection
 0x02     | 1    | Preset 1             | Bank 1, Switch 1
 0x03     | 1    | Preset 2             | Bank 1, Switch 2
@@ -430,6 +431,8 @@ Address  | Size | Content              | Notes
 
 **Total CC Configuration**: 13 bytes  
 **Remaining Available**: 880 bytes
+
+**Note on Address 0x00**: This address remains reserved for backward compatibility. In earlier firmware versions, it stored the MIDI channel. Since MIDI channel is now hardware-configured via DIP switches (read at startup), this address is no longer used but is kept reserved to avoid potential conflicts if old EEPROM data is present. Future firmware could repurpose this address if needed.
 
 ### EEPROM Constants
 
@@ -716,8 +719,9 @@ When updating firmware with these changes:
 4. User must explicitly enable CC mode in CC_CONFIG_MODE
 
 #### Enabling CC Mode
-1. Enter CC_CONFIG_MODE (from any mode, hold SW2+SW3 for 2s when in CC mode cycling)
-2. Navigate to "CC Off" item
+1. Cycle to CC_MODE (press SW2+SW3 briefly to cycle through modes)
+2. Once in CC_MODE, enter CC_CONFIG_MODE by holding SW2+SW3 for 2 seconds
+3. Navigate to "CC Off" item
 3. Press SW3 to change to "CC On"
 4. Hold SW2+SW3 to save
 5. CC mode now appears in mode cycling
