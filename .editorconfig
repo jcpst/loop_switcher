@@ -1,0 +1,7 @@
+# indent, two spaces for c++
+root = true
+
+[*.cpp]
+indent_style = space
+indent_size = 2
+max_line_length = 120

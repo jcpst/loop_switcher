@@ -1,13 +1,14 @@
 #include "switches.h"
 
-SwitchHandler::SwitchHandler(const uint8_t pins[4], uint8_t debounceMs, uint8_t simultaneousWindowMs, uint16_t longPressMs)
+SwitchHandler::SwitchHandler(const uint8_t pins[4], uint8_t debounceMs, uint8_t simultaneousWindowMs,
+                             uint16_t longPressMs)
   : switchPins(pins), debounceMs(debounceMs), simultaneousWindowMs(simultaneousWindowMs), longPressMs(longPressMs) {
 }
 
 void SwitchHandler::begin() {
   for (int i = 0; i < 4; i++) {
     pinMode(switchPins[i], INPUT_PULLUP);
-    switches[i].currentState = true;  // Pullup = HIGH when not pressed
+    switches[i].currentState = true; // Pullup = HIGH when not pressed
     switches[i].lastState = true;
     switches[i].lastDebounceTime = 0;
     switches[i].pressStartTime = 0;
@@ -45,10 +46,12 @@ void SwitchHandler::readAndDebounce() {
 }
 
 bool SwitchHandler::isRecentPress(uint8_t switchIndex) {
-  if (!switches[switchIndex].currentState) {  // Currently pressed
+  if (!switches[switchIndex].currentState) {
+    // Currently pressed
     unsigned long pressDuration = millis() - switches[switchIndex].pressStartTime;
     return pressDuration < simultaneousWindowMs;
   }
+
   return false;
 }
 
@@ -68,19 +71,22 @@ bool SwitchHandler::isLongPress(uint8_t sw1Index, uint8_t sw2Index) {
 
 bool SwitchHandler::isLongPress(uint8_t sw1Index, uint8_t sw2Index, uint16_t customLongPressMs) {
   unsigned long now = millis();
-  if (!switches[sw1Index].currentState && !switches[sw2Index].currentState) {
-    if (!switches[sw1Index].longPressTriggered && !switches[sw2Index].longPressTriggered) {
-      if ((now - switches[sw1Index].pressStartTime) > customLongPressMs &&
-          (now - switches[sw2Index].pressStartTime) > customLongPressMs) {
-        switches[sw1Index].longPressTriggered = true;
-        switches[sw2Index].longPressTriggered = true;
-        return true;
-      }
-    }
+
+  bool switchesAreOn = !switches[sw1Index].currentState && !switches[sw2Index].currentState;
+  bool notTriggered = !switches[sw1Index].longPressTriggered && !switches[sw2Index].longPressTriggered;
+  bool haveBeenHeldLongEnough = now - switches[sw1Index].pressStartTime > customLongPressMs &&
+                                now - switches[sw2Index].pressStartTime > customLongPressMs;
+
+  if (switchesAreOn && notTriggered && haveBeenHeldLongEnough) {
+    switches[sw1Index].longPressTriggered = true;
+    switches[sw2Index].longPressTriggered = true;
+
+    return true;
   }
+
   return false;
 }
 
-SwitchState* SwitchHandler::getStates() {
+SwitchState *SwitchHandler::getStates() {
   return switches;
 }

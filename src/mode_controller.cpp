@@ -48,7 +48,9 @@ void ModeController::detectSwitchPatterns() {
       state.globalPresetActive = false;
       state.activePreset = -1;
     }
+
     switches.clearRecentPresses();
+
     return;
   }
 
@@ -59,10 +61,12 @@ void ModeController::detectSwitchPatterns() {
     DEBUG_PRINT("Bank change: ");
     DEBUG_PRINTLN(state.currentBank);
     state.displayState = SHOWING_BANK;
+
     // Clear global preset when changing banks
     state.globalPresetActive = false;
     state.activePreset = -1;
     switches.clearRecentPresses();
+
     return;
   }
 
@@ -73,10 +77,12 @@ void ModeController::detectSwitchPatterns() {
     DEBUG_PRINT("Bank change: ");
     DEBUG_PRINTLN(state.currentBank);
     state.displayState = SHOWING_BANK;
+
     // Clear global preset when changing banks
     state.globalPresetActive = false;
     state.activePreset = -1;
     switches.clearRecentPresses();
+
     return;
   }
 
@@ -93,10 +99,12 @@ void ModeController::detectSwitchPatterns() {
 void ModeController::enterEditMode() {
   DEBUG_PRINTLN("Mode change: BANK -> EDIT");
   state.currentMode = EDIT_MODE;
+
   // Copy current loop states to edit buffer
   for (int i = 0; i < NUM_LOOPS; i++) {
     state.editModeLoopStates[i] = state.loopStates[i];
   }
+
   state.displayState = EDIT_MODE_ANIMATED;
   state.editModeAnimTime = millis();
   state.editModeAnimFrame = 0;
@@ -108,13 +116,12 @@ void ModeController::exitEditMode() {
   for (int i = 0; i < NUM_LOOPS; i++) {
     state.loopStates[i] = state.editModeLoopStates[i];
   }
+
   // Update relays immediately with new states
   relays.update(state.loopStates);
-
   // Calculate preset number and save to EEPROM
   uint8_t presetNumber = ((state.currentBank - 1) * PRESETS_PER_BANK) + state.activePreset + 1;
   state.savePreset(presetNumber);
-
   // Show "SAVED" message
   state.displayState = SHOWING_SAVED;
   state.savedDisplayStartTime = millis();
@@ -150,11 +157,9 @@ void ModeController::handleSingleSwitchPress(uint8_t switchIndex) {
       // Send MIDI Program Change
       uint8_t pc = ((state.currentBank - 1) * PRESETS_PER_BANK) + switchIndex + 1;
       sendMIDIProgramChange(pc, state.midiChannel);
-
       // Load preset from EEPROM and apply to relays
       state.loadPreset(pc);
       relays.update(state.loopStates);
-
       // Flash PC number on display
       state.flashingPC = pc;
       state.pcFlashStartTime = millis();
