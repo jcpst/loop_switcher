@@ -31,7 +31,7 @@ This guide provides step-by-step instructions for building the 4-Loop MIDI Switc
 ### Reference Documents
 Before starting, familiarize yourself with:
 - [Bill of Materials (BOM.md)](BOM.md) - All required components
-- [Complete Pin Assignment Table](schematic_complete.pdf) - Pin connections
+- [Hardware Schematic (SCHEMATIC.md)](SCHEMATIC.md) - Complete pin assignments and circuit diagrams
 - [Software Configuration (src/config.h)](../src/config.h) - Pin definitions in code
 
 ## Safety
