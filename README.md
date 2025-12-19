@@ -22,9 +22,19 @@ A programmable guitar effects loop switcher with MIDI control, built on the ATme
 - 4x momentary footswitches (active LOW with pullups)
 - 4x DIP switches (for MIDI channel selection, shares footswitch pins)
 - MAX7219 7-segment display driver with 8-digit display
-- 4x DPDT relays for audio switching
+- 4x DPDT relays for audio switching (5VDC, 60mA coil)
+- 4x NPN transistors (2N2222 or equivalent) for relay drivers
+- 4x 1kΩ resistors (base resistors)
+- 4x 1N4148 diodes (flyback protection)
 - 74HC595 shift register + 8x LEDs (status indicators)
 - MIDI output circuit (hardware UART)
+
+### Hardware Documentation
+For detailed hardware specifications, circuit schematics, and relay driver documentation, see:
+- **[Hardware Documentation](hardware/README.md)** - Complete hardware specifications
+- **[Relay Driver Schematic](hardware/relay_driver_schematic.pdf)** - Circuit diagrams (PDF)
+
+**Important:** Relays require driver circuits (transistors + flyback diodes). See hardware documentation for safe operation.
 
 ### Pin Configuration
 See `src/config.h` for detailed pin assignments
