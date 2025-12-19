@@ -2,7 +2,7 @@
 #define DISPLAY_H
 
 #include <Arduino.h>
-#include <LedControl.h>
+#include <LedControl.h>  // wayoda/LedControl v1.0.6 - uses software bit-banging, not hardware SPI
 
 // Number of digits in the display
 #define DISPLAY_DIGITS 8

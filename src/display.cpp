@@ -1,5 +1,21 @@
 #include "display.h"
 
+// MAX7219 Display Driver Implementation
+//
+// This class provides buffered display updates for the MAX7219 7-segment display
+// driver via the LedControl library.
+//
+// Performance Optimization:
+// The LedControl library uses software bit-banging (not hardware SPI), which is
+// slower than hardware SPI. To minimize the performance impact:
+// 1. All display operations are buffered - updates only occur when content changes
+// 2. Each digit position tracks: character value, digit vs char type, decimal state
+// 3. Redundant SPI transactions are avoided by comparing new vs current buffer state
+// 4. Display updates are infrequent in this application (mode changes, bank selection)
+//
+// This buffering strategy significantly reduces the number of slow digitalWrite()
+// operations, making the software bit-banging overhead acceptable for this use case.
+
 // Sentinel values for display buffer management
 #define BLANK_VALUE 0xFE   // Represents a blank/cleared display position
 #define INIT_VALUE 0xFF    // Initial invalid value to force first update

@@ -30,10 +30,33 @@ const uint8_t RELAY2_PIN = 8;
 const uint8_t RELAY3_PIN = 9;
 const uint8_t RELAY4_PIN = 10;
 
-// MAX7219 SPI (using LedControl library)
-const uint8_t MAX_DIN_PIN = 11;
-const uint8_t MAX_CLK_PIN = 13;
-const uint8_t MAX_CS_PIN = 12;
+// MAX7219 Display Driver
+// Using wayoda/LedControl library v1.0.6
+// 
+// IMPORTANT: The LedControl library uses software bit-banging, NOT hardware SPI.
+// Despite pins matching ATmega328 hardware SPI (MOSI=D11, SCK=D13, SS=D12),
+// the library manually toggles pins using digitalWrite() for compatibility
+// with any pin configuration.
+//
+// Performance Impact:
+// - Software bit-banging is slower than hardware SPI (~20x)
+// - Each display update involves multiple digitalWrite() calls
+// - CPU usage is higher during display updates
+// - For this application: Display updates are infrequent (mode changes, bank
+//   selection) and buffered to minimize redundant updates, so the performance
+//   impact is acceptable.
+//
+// Hardware SPI Alternative:
+// - LedControl_HW_SPI fork (github.com/jacken/LedControl_HW_SPI) provides
+//   same API but uses hardware SPI for significantly faster performance
+// - Would require library change in platformio.ini
+// - Benefit: Faster updates, lower CPU usage
+// - Tradeoff: Must use specific SPI pins (less portable)
+// - Recommendation: Consider for future optimization if display performance
+//   becomes critical or if adding more display animations
+const uint8_t MAX_DIN_PIN = 11;  // MOSI (hardware SPI pin)
+const uint8_t MAX_CLK_PIN = 13;  // SCK (hardware SPI pin)
+const uint8_t MAX_CS_PIN = 12;   // SS (hardware SPI pin)
 
 // 74HC595 shift register for status LEDs
 const uint8_t SR_DATA_PIN = A0;   // SER / DS - Serial data input
