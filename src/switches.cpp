@@ -48,7 +48,7 @@ void SwitchHandler::readAndDebounce() {
 bool SwitchHandler::isRecentPress(uint8_t switchIndex) const {
   if (!switches[switchIndex].currentState) {
     // Currently pressed
-    unsigned long pressDuration = millis() - switches[switchIndex].pressStartTime;
+    const unsigned long pressDuration = millis() - switches[switchIndex].pressStartTime;
     return pressDuration < simultaneousWindowMs;
   }
 
@@ -70,11 +70,11 @@ bool SwitchHandler::isLongPress(uint8_t sw1Index, uint8_t sw2Index) {
 }
 
 bool SwitchHandler::isLongPress(uint8_t sw1Index, uint8_t sw2Index, uint16_t customLongPressMs) {
-  unsigned long now = millis();
+  const unsigned long now = millis();
 
-  bool switchesAreOn = !switches[sw1Index].currentState && !switches[sw2Index].currentState;
-  bool notTriggered = !switches[sw1Index].longPressTriggered && !switches[sw2Index].longPressTriggered;
-  bool haveBeenHeldLongEnough = now - switches[sw1Index].pressStartTime > customLongPressMs &&
+  const bool switchesAreOn = !switches[sw1Index].currentState && !switches[sw2Index].currentState;
+  const bool notTriggered = !switches[sw1Index].longPressTriggered && !switches[sw2Index].longPressTriggered;
+  const bool haveBeenHeldLongEnough = now - switches[sw1Index].pressStartTime > customLongPressMs &&
                                 now - switches[sw2Index].pressStartTime > customLongPressMs;
 
   if (switchesAreOn && notTriggered && haveBeenHeldLongEnough) {

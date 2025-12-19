@@ -44,7 +44,7 @@ void StateManager::initialize() {
   DEBUG_PRINTLN(midiChannel + 1);
 
   // Check if EEPROM has been initialized
-  uint8_t initFlag = EEPROM.read(EEPROM_INIT_FLAG_ADDR);
+  const uint8_t initFlag = EEPROM.read(EEPROM_INIT_FLAG_ADDR);
   if (initFlag != EEPROM_INIT_MAGIC) {
     DEBUG_PRINTLN("First boot - initializing EEPROM");
     // First boot - initialize all presets to 0 (all loops off)
@@ -80,7 +80,7 @@ void StateManager::savePreset(uint8_t presetNumber) {
   }
 
   // Only write to EEPROM if the value has changed (reduces wear)
-  uint8_t currentValue = EEPROM.read(EEPROM_PRESETS_START_ADDR + presetNumber - 1);
+  const uint8_t currentValue = EEPROM.read(EEPROM_PRESETS_START_ADDR + presetNumber - 1);
   if (currentValue != packedState) {
     DEBUG_PRINT("Saving preset ");
     DEBUG_PRINT(presetNumber);
@@ -94,7 +94,7 @@ void StateManager::loadPreset(uint8_t presetNumber) {
   if (presetNumber < 1 || presetNumber > TOTAL_PRESETS) return;
 
   // Read packed state from EEPROM
-  uint8_t packedState = EEPROM.read(EEPROM_PRESETS_START_ADDR + presetNumber - 1);
+  const uint8_t packedState = EEPROM.read(EEPROM_PRESETS_START_ADDR + presetNumber - 1);
 
   DEBUG_PRINT("Loading preset ");
   DEBUG_PRINT(presetNumber);

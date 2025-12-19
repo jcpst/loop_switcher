@@ -23,7 +23,7 @@ void Display::begin() {
 
 // Buffered setChar - only updates if value changed
 void Display::setCharAtBuffered(uint8_t position, char c, bool dp) {
-  uint8_t charValue = (uint8_t)c;
+  const uint8_t charValue = (uint8_t)c;
   
   // Update only if the character, type, or decimal point changed (or buffer not initialized)
   if (!bufferInitialized || digitBuffer[position] != charValue || isDigitBuffer[position] || decimalBuffer[position] != dp) {
@@ -100,8 +100,8 @@ void Display::displayBankNumber(uint8_t num, bool globalPreset) {
   setCharAtBuffered(5, 'n', false);
   setCharAtBuffered(4, 'K', false);
 
-  uint8_t tens = num / 10;
-  uint8_t ones = num % 10;
+  const uint8_t tens = num / 10;
+  const uint8_t ones = num % 10;
 
   setDigitAtBuffered(1, tens, false);
   setDigitAtBuffered(0, ones, false);
@@ -119,8 +119,8 @@ void Display::displayChannel(uint8_t ch) {
   setCharAtBuffered(5, 'a', false);
   setCharAtBuffered(4, 'n', false);
 
-  uint8_t tens = ch / 10;
-  uint8_t ones = ch % 10;
+  const uint8_t tens = ch / 10;
+  const uint8_t ones = ch % 10;
 
   setDigitAtBuffered(1, tens, false);
   setDigitAtBuffered(0, ones, false);
