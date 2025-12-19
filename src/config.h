@@ -39,7 +39,8 @@ const uint8_t RELAY4_PIN = 10;
 // with any pin configuration.
 //
 // Performance Impact:
-// - Software bit-banging is slower than hardware SPI (~20x)
+// - Software bit-banging is slower than hardware SPI (up to 20x based on
+//   LedControl_HW_SPI project benchmarks)
 // - Each display update involves multiple digitalWrite() calls
 // - CPU usage is higher during display updates
 // - For this application: Display updates are infrequent (mode changes, bank
