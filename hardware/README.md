@@ -22,13 +22,24 @@ The ATmega328 GPIO pins **cannot drive relays directly**. Each GPIO pin has a ma
 
 ### Driver Circuit Design
 
-Each of the 4 relay outputs (D7-D10) uses an identical driver circuit consisting of:
+Each of the 4 relay outputs (D7-D10) uses an identical driver circuit. This design uses discrete transistors for maximum flexibility and clarity.
 
 **Components per relay:**
 - **Transistor:** 2N2222 NPN (or equivalent: BC547, 2N3904)
 - **Base Resistor:** 1kΩ (limits base current to ~5mA)
 - **Flyback Diode:** 1N4148 (protects against back-EMF)
 - **Relay:** FINDER-36 DPDT relay (or equivalent 5V DPDT relay)
+
+**Alternative: Integrated Driver IC**
+
+For a more compact design, you can use a Darlington transistor array IC instead of discrete transistors:
+- **ULN2003A** (7 channels) or **ULN2803A** (8 channels)
+- Includes built-in base resistors and flyback diodes
+- Single IC can drive all 4 relays
+- Simplifies PCB layout and reduces component count
+- Trade-off: Slightly higher voltage drop (Vce(sat) ≈ 1V vs 0.3V for discrete)
+
+**Note:** This documentation describes the discrete transistor approach as shown in the schematic. If using a ULN IC, refer to the manufacturer's datasheet for pin connections.
 
 ### Circuit Schematic
 
