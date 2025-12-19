@@ -17,12 +17,12 @@ public:
 
   void begin();
   void readAndDebounce();
-  bool isRecentPress(uint8_t switchIndex);
+  bool isRecentPress(uint8_t switchIndex) const;
   void clearRecentPresses();
-  bool isPressed(uint8_t switchIndex);
+  bool isPressed(uint8_t switchIndex) const;
   bool isLongPress(uint8_t sw1Index, uint8_t sw2Index);
   bool isLongPress(uint8_t sw1Index, uint8_t sw2Index, uint16_t customLongPressMs);
-  SwitchState* getStates();
+  const SwitchState* getStates() const;
 
 private:
   const uint8_t* switchPins;

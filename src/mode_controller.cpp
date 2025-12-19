@@ -29,10 +29,10 @@ void ModeController::detectSwitchPatterns() {
   }
 
   // Check for simultaneous presses (within window)
-  bool sw1Pressed = switches.isRecentPress(0);
-  bool sw2Pressed = switches.isRecentPress(1);
-  bool sw3Pressed = switches.isRecentPress(2);
-  bool sw4Pressed = switches.isRecentPress(3);
+  const bool sw1Pressed = switches.isRecentPress(0);
+  const bool sw2Pressed = switches.isRecentPress(1);
+  const bool sw3Pressed = switches.isRecentPress(2);
+  const bool sw4Pressed = switches.isRecentPress(3);
 
   // Center switches: toggle Manual/Bank mode
   if (sw2Pressed && sw3Pressed) {
@@ -120,7 +120,7 @@ void ModeController::exitEditMode() {
   // Update relays immediately with new states
   relays.update(state.loopStates);
   // Calculate preset number and save to EEPROM
-  uint8_t presetNumber = ((state.currentBank - 1) * PRESETS_PER_BANK) + state.activePreset + 1;
+  const uint8_t presetNumber = ((state.currentBank - 1) * PRESETS_PER_BANK) + state.activePreset + 1;
   state.savePreset(presetNumber);
   // Show "SAVED" message
   state.displayState = SHOWING_SAVED;
@@ -155,7 +155,7 @@ void ModeController::handleSingleSwitchPress(uint8_t switchIndex) {
       state.activePreset = switchIndex;
 
       // Send MIDI Program Change
-      uint8_t pc = ((state.currentBank - 1) * PRESETS_PER_BANK) + switchIndex + 1;
+      const uint8_t pc = ((state.currentBank - 1) * PRESETS_PER_BANK) + switchIndex + 1;
       sendMIDIProgramChange(pc, state.midiChannel);
       // Load preset from EEPROM and apply to relays
       state.loadPreset(pc);
@@ -169,7 +169,7 @@ void ModeController::handleSingleSwitchPress(uint8_t switchIndex) {
 }
 
 void ModeController::updateStateMachine() {
-  unsigned long now = millis();
+  const unsigned long now = millis();
 
   // Handle PC flash timeout
   if (state.displayState == FLASHING_PC) {

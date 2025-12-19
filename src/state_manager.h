@@ -44,7 +44,7 @@ public:
   void loadPreset(uint8_t presetNumber);
 
   // Read MIDI channel from DIP switches on footswitch pins
-  uint8_t readMidiChannelFromHardware();
+  uint8_t readMidiChannelFromHardware() const;
 };
 
 #endif

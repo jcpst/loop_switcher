@@ -8,7 +8,7 @@ public:
   RelayController(const uint8_t pins[4]);
 
   void begin();
-  void update(bool loopStates[4]);
+  void update(const bool loopStates[4]);
   void allOff();
 
 private:
