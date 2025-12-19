@@ -18,7 +18,7 @@ StateManager::StateManager()
     flashingPC(0) {
 }
 
-uint8_t StateManager::readMidiChannelFromHardware() {
+uint8_t StateManager::readMidiChannelFromHardware() const {
   // Read 4-bit binary value from footswitch pins (used as DIP switch inputs during setup)
   // SW1=bit0, SW2=bit1, SW3=bit2, SW4=bit3
   // Binary value 0-15 represents MIDI channels 0-15 (displayed as 1-16)

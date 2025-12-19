@@ -68,7 +68,7 @@ void Display::clearBuffered() {
   }
 }
 
-void Display::update(DisplayState state, uint8_t value, bool loopStates[4], bool globalPreset, uint8_t animFrame) {
+void Display::update(DisplayState state, uint8_t value, const bool loopStates[4], bool globalPreset, uint8_t animFrame) {
   switch (state) {
     case SHOWING_MANUAL:
       displayManualStatus(loopStates);
@@ -152,7 +152,7 @@ void Display::displaySaved() {
   setCharAtBuffered(2, 'd', false);
 }
 
-void Display::displayManualStatus(bool loopStates[4]) {
+void Display::displayManualStatus(const bool loopStates[4]) {
   clearBuffered();
 
   setCharAtBuffered(6, loopStates[3] ? '4' : '_', false);

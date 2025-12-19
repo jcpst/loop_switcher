@@ -11,7 +11,7 @@ void RelayController::begin() {
   }
 }
 
-void RelayController::update(bool loopStates[4]) {
+void RelayController::update(const bool loopStates[4]) {
   for (int i = 0; i < 4; i++) {
     digitalWrite(relayPins[i], loopStates[i] ? HIGH : LOW);
   }

@@ -45,7 +45,7 @@ void SwitchHandler::readAndDebounce() {
   }
 }
 
-bool SwitchHandler::isRecentPress(uint8_t switchIndex) {
+bool SwitchHandler::isRecentPress(uint8_t switchIndex) const {
   if (!switches[switchIndex].currentState) {
     // Currently pressed
     unsigned long pressDuration = millis() - switches[switchIndex].pressStartTime;
@@ -61,7 +61,7 @@ void SwitchHandler::clearRecentPresses() {
   }
 }
 
-bool SwitchHandler::isPressed(uint8_t switchIndex) {
+bool SwitchHandler::isPressed(uint8_t switchIndex) const {
   return !switches[switchIndex].currentState;
 }
 
@@ -87,6 +87,6 @@ bool SwitchHandler::isLongPress(uint8_t sw1Index, uint8_t sw2Index, uint16_t cus
   return false;
 }
 
-SwitchState *SwitchHandler::getStates() {
+const SwitchState *SwitchHandler::getStates() const {
   return switches;
 }
