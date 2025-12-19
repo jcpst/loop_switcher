@@ -44,26 +44,29 @@ For a more compact design, you can use a Darlington transistor array IC instead 
 ### Circuit Schematic
 
 ```
-Arduino GPIO (D7-D10)
-     |
-     +---[1kΩ]---+
-                 |
-                 | B (Base)
-              +--+--+
-              |     |  2N2222 NPN Transistor
-              | NPN |
-              +--+--+
-                 |
-    +5V ----------+--------+
-    |            |        |
-    |         [Relay]     |
-    |          Coil       |
-    |            |     [1N4148]
-    |            |     Cathode --|>|-- Anode
-    +------------+--------+
-                 |
-                 | E (Emitter)
-                GND
+                       +5V
+                        |
+                        +--------+--------+
+                        |        |        |
+                     [Relay]  [1N4148]    |
+                      Coil    Cathode     |
+                        |        |        |
+                        +----+---+        |
+                             |            |
+Arduino GPIO (D7-D10)        | C          |
+     |                  +----+----+       |
+     +---[1kΩ]----------| B       |       |
+                        |  2N2222 |       |
+                        |   NPN   |       |
+                        +----+----+       |
+                             | E          |
+                             |            |
+                            GND          GND
+
+Legend:
+- B = Base, C = Collector, E = Emitter
+- Flyback diode: Cathode (band) to +5V, Anode to Collector
+- All 4 circuits share common +5V and GND
 ```
 
 ### Operation
@@ -367,10 +370,12 @@ When ready for PCB fabrication, generate Gerber files from KiCad:
 
 ### Datasheets
 
-- [2N2222A Transistor Datasheet](https://www.onsemi.com/pdf/datasheet/p2n2222a-d.pdf)
-- [1N4148 Diode Datasheet](https://www.vishay.com/docs/81857/1n4148.pdf)
-- [FINDER 36.11 Relay Datasheet](https://gfinder.findernet.com/public/attachments/36/EN/S36EN.pdf)
-- [ATmega328P Datasheet](https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf)
+**Note:** External datasheet links may change over time. If a link is broken, search for the part number on the manufacturer's website or a datasheet aggregator like Digi-Key or Mouser.
+
+- [2N2222A Transistor Datasheet](https://www.onsemi.com/pdf/datasheet/p2n2222a-d.pdf) - ON Semiconductor (search: "2N2222A datasheet")
+- [1N4148 Diode Datasheet](https://www.vishay.com/docs/81857/1n4148.pdf) - Vishay (search: "1N4148 datasheet")
+- [FINDER 36.11 Relay Datasheet](https://gfinder.findernet.com/public/attachments/36/EN/S36EN.pdf) - Finder (search: "FINDER 36.11 datasheet")
+- [ATmega328P Datasheet](https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf) - Microchip (search: "ATmega328P datasheet")
 
 ### Technical Resources
 
