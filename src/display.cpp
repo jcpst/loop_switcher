@@ -7,8 +7,9 @@
 //
 // Performance Optimization:
 // The LedControl library uses software bit-banging (not hardware SPI), which is
-// slower than hardware SPI. According to benchmarks from the LedControl_HW_SPI fork,
-// hardware SPI can be ~20x faster than software bit-banging for MAX7219 communication.
+// slower than hardware SPI. According to benchmarks from the LedControl_HW_SPI fork
+// (https://github.com/jacken/LedControl_HW_SPI), hardware SPI can be up to 20x faster
+// than software bit-banging for MAX7219 communication.
 // To minimize the performance impact of software bit-banging:
 // 1. All display operations are buffered - updates only occur when content changes
 // 2. Each digit position tracks: character value, digit vs char type, decimal state
