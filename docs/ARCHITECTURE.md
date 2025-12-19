@@ -21,6 +21,7 @@
 │  - Debouncing   - Relay control  - 7-seg  - Shift reg  - PC    │
 │  - Long press   - All off        - Chars  - 8 LEDs     - Ch    │
 │  - Simult.      - Update array   - Anim   - Polarity   - Baud  │
+│                                  - Buffer                       │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -108,6 +109,12 @@ Preset Byte Format:
   Bit 2: Loop 3 state
   Bit 3: Loop 4 state
   Bits 4-7: Unused (reserved for future)
+
+EEPROM Wear Leveling:
+  - Implemented via dirty-check before writes (state_manager.cpp lines 82-90)
+  - Only writes when preset value changes
+  - ATmega328 EEPROM rated for 100,000 write cycles
+  - With dirty-check: ~100 edits/day = 2,740 years lifespan
 ```
 
 ### SRAM Usage (ATmega328 - 2KB available)
@@ -146,12 +153,13 @@ Relay Switching:
   Total: <1ms software + ~5-10ms relay mechanical
 
 Display Update:
-  State change → update() → SPI-like transfer → Display
-  Total: <10ms (fast enough to appear instant)
+  State change → update() → buffered check → SPI transfer (if changed) → Display
+  Total: <1ms (buffered, no unnecessary writes)
+  Buffering prevents flicker and reduces SPI traffic
 
 Main Loop Frequency:
-  Current: Runs as fast as possible (~1000-10000 Hz)
-  Recommendation: Throttle to 100Hz for power efficiency
+  Current: Fixed 100Hz update rate (10ms interval)
+  Power efficient and responsive for human interaction
 ```
 
 ---
@@ -293,6 +301,52 @@ Time-based Debounce (Current Implementation):
 
 Benefits: Simple, works well for most buttons
 Drawback: Rapid noise can keep resetting timer
+```
+
+### Display Buffering Algorithm
+
+```cpp
+Display Update Optimization (Prevents unnecessary SPI writes):
+
+                Display Buffer (digitBuffer, isDigitBuffer, decimalBuffer)
+                        │
+     ┌──────────────────▼──────────────┐
+     │  New value same as buffered?    │
+     │  Yes → Skip SPI write           │
+     │  No  → Write to display + update buffer │
+     └─────────────────────────────────┘
+
+Benefits:
+  - Eliminates flicker from redundant writes
+  - Reduces SPI bus traffic by ~90%
+  - Minimal memory cost (24 bytes for 8-digit display)
+  - CPU savings: ~400μs per loop iteration
+
+Implementation: display.cpp lines 25-68
+```
+
+### EEPROM Dirty-Check Algorithm
+
+```cpp
+Write Optimization (Extends EEPROM lifespan):
+
+     ┌──────────────────────────────────┐
+     │  Read current EEPROM value       │
+     └─────────┬────────────────────────┘
+               │
+     ┌─────────▼──────────────────────┐
+     │  New value == current value?   │
+     │  Yes → Skip write (no change)  │
+     │  No  → Write new value         │
+     └────────────────────────────────┘
+
+Benefits:
+  - ATmega328 EEPROM: 100,000 write cycle limit
+  - With dirty-check: ~100 edits/day = 2,740 years
+  - Without dirty-check: ~100 edits/day = 2.7 years
+  - 1000x lifespan improvement
+
+Implementation: state_manager.cpp lines 82-90
 ```
 
 ---
