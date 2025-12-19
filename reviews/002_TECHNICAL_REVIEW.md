@@ -89,11 +89,11 @@ This is a well-architected embedded firmware project demonstrating solid microco
 ### 🟡 Optimization Opportunities
 
 1. **SPI Communication for Display**
-   - Currently using bit-banged SPI via LedControl library
-   - **Opportunity:** Hardware SPI (MOSI=D11, SCK=D13, SS=D12) is already wired!
-   - **Benefit:** Faster display updates, lower CPU usage
-   - **Note:** LedControl library does use hardware SPI when pins match
-   - **Action:** Verify library is actually using hardware SPI, or switch to direct register access
+   - Currently using LedControl library with pins DIN=D11, CLK=D13, CS=D12
+   - These pins match ATmega328 hardware SPI (MOSI=D11, SCK=D13, SS=D12)
+   - **Note:** LedControl library likely uses hardware SPI when pins match, but this should be verified
+   - **Action:** Profile actual performance or inspect library source to confirm hardware SPI usage
+   - **Benefit if not using HW SPI:** Faster display updates, lower CPU usage
 
 2. **Shift Register Control**
    - Currently bit-banging on A0-A2 (74HC595)
@@ -225,14 +225,18 @@ uint8_t StateManager::readMidiChannelFromHardware() {
 
 **Issue - Global Preset Activation:**
 ```cpp
-// Line 142-143
+// mode_controller.cpp lines 142-150 (simplified excerpt)
 if (state.activePreset == switchIndex && !state.globalPresetActive) {
+  // Activate global preset
   state.globalPresetActive = true;
+  sendMIDIProgramChange(TOTAL_PRESETS, state.midiChannel);
+  // ... display update code ...
+}
 ```
 
 **Problem:** This is "same button twice" detection but it's instantaneous
-- No time window enforcement
-- Relies on user pressing within one loop iteration after activePreset set
+- No explicit time window enforcement
+- Relies on user pressing the same button again while activePreset is still set
 - Users might trigger accidentally or miss it due to timing
 
 **Recommendation:**
@@ -671,7 +675,7 @@ All EEPROM access is bounds-checked. Excellent.
 
 | Resource | Used | Available | Utilization | Headroom |
 |----------|------|-----------|-------------|----------|
-| Flash | ~18KB | 32KB | 56% | Good |
+| Flash | ~15-18KB | 32KB | ~50-56% | Good |
 | SRAM | 630B | 2048B | 31% | Excellent |
 | EEPROM | 130B | 1024B | 13% | Excellent |
 | GPIO | 18 pins | 20 pins* | 90% | Tight |
