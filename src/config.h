@@ -47,7 +47,7 @@ const uint8_t RELAY4_PIN = 10;
 //   impact is acceptable.
 //
 // Hardware SPI Alternative:
-// - LedControl_HW_SPI fork (github.com/jacken/LedControl_HW_SPI) provides
+// - LedControl_HW_SPI fork (https://github.com/jacken/LedControl_HW_SPI) provides
 //   same API but uses hardware SPI for significantly faster performance
 // - Would require library change in platformio.ini
 // - Benefit: Faster updates, lower CPU usage
