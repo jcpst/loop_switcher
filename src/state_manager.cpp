@@ -12,9 +12,11 @@ StateManager::StateManager()
     globalPresetActive(false),
     editModeLoopStates{false, false, false, false},
     editModeAnimFrame(0),
+    savedDisplayAnimFrame(0),
     pcFlashStartTime(0),
     editModeAnimTime(0),
     savedDisplayStartTime(0),
+    savedDisplayAnimTime(0),
     flashingPC(0) {
 }
 

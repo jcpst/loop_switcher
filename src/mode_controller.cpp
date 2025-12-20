@@ -6,15 +6,6 @@ ModeController::ModeController(StateManager& state, SwitchHandler& switches, Rel
 }
 
 void ModeController::detectSwitchPatterns() {
-  // Check for 2-second long press of center switches (edit mode)
-  // Only allow in BANK_MODE when a preset is active
-  if (state.currentMode == BANK_MODE && state.activePreset != -1) {
-    if (switches.isLongPress(1, 2, EDIT_MODE_LONG_PRESS_MS)) {
-      enterEditMode();
-      return;
-    }
-  }
-
   // In edit mode, check for exit
   if (state.currentMode == EDIT_MODE) {
     if (switches.isLongPress(1, 2, EDIT_MODE_LONG_PRESS_MS)) {
@@ -23,6 +14,21 @@ void ModeController::detectSwitchPatterns() {
     }
 
     // Don't process other patterns while holding center switches in edit mode
+    if (switches.isPressed(1) && switches.isPressed(2)) {
+      return;
+    }
+  }
+
+  // Check for 2-second long press of center switches (edit mode)
+  // Only allow in BANK_MODE when a preset is active
+  // This must be checked BEFORE the short press toggle
+  if (state.currentMode == BANK_MODE && state.activePreset != -1) {
+    if (switches.isLongPress(1, 2, EDIT_MODE_LONG_PRESS_MS)) {
+      enterEditMode();
+      return;
+    }
+
+    // Don't process short press patterns while holding center switches in bank mode
     if (switches.isPressed(1) && switches.isPressed(2)) {
       return;
     }
@@ -122,9 +128,11 @@ void ModeController::exitEditMode() {
   // Calculate preset number and save to EEPROM
   const uint8_t presetNumber = ((state.currentBank - 1) * PRESETS_PER_BANK) + state.activePreset + 1;
   state.savePreset(presetNumber);
-  // Show "SAVED" message
+  // Show flashing decimals animation
   state.displayState = SHOWING_SAVED;
   state.savedDisplayStartTime = millis();
+  state.savedDisplayAnimTime = millis();
+  state.savedDisplayAnimFrame = 0;
   state.currentMode = BANK_MODE;
 }
 
@@ -186,9 +194,15 @@ void ModeController::updateStateMachine() {
     }
   }
 
-  // Handle saved display timeout
+  // Handle saved display animation
   if (state.displayState == SHOWING_SAVED) {
-    if ((now - state.savedDisplayStartTime) > SAVED_DISPLAY_MS) {
+    if ((now - state.savedDisplayAnimTime) > SAVED_ANIM_INTERVAL_MS) {
+      state.savedDisplayAnimFrame++;
+      state.savedDisplayAnimTime = now;
+    }
+
+    // After 6 frames (3 flashes), return to bank display
+    if (state.savedDisplayAnimFrame >= 6) {
       state.displayState = SHOWING_BANK;
     }
   }

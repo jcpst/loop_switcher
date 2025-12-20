@@ -83,11 +83,14 @@ void loop() {
   // Update LEDs with applied loop states
   leds.update(appliedLoopStates, state.currentMode, state.activePreset, state.globalPresetActive);
 
-  // Update display
+  // Update display with appropriate animation frame
+  const uint8_t animFrame = (state.displayState == SHOWING_SAVED)
+                             ? state.savedDisplayAnimFrame
+                             : state.editModeAnimFrame;
   display.update(
     state.displayState,
     state.getDisplayValue(),
     state.getDisplayLoops(),
     state.globalPresetActive,
-    state.editModeAnimFrame);
+    animFrame);
 }

@@ -25,7 +25,7 @@ public:
   void displayChannel(uint8_t ch);
   void displayManualStatus(const bool loopStates[4]);
   void displayEdit(uint8_t animFrame);
-  void displaySaved();
+  void displaySaved(uint8_t animFrame);
   void clear();
 
 private:

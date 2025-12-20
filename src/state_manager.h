@@ -26,10 +26,14 @@ public:
   bool editModeLoopStates[4];
   uint8_t editModeAnimFrame;
 
+  // Saved display animation
+  uint8_t savedDisplayAnimFrame;
+
   // Timing
   unsigned long pcFlashStartTime;
   unsigned long editModeAnimTime;
   unsigned long savedDisplayStartTime;
+  unsigned long savedDisplayAnimTime;
   
   // Display state
   uint8_t flashingPC;

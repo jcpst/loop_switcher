@@ -58,7 +58,8 @@ const uint16_t LONG_PRESS_MS = 1000;
 const uint16_t EDIT_MODE_LONG_PRESS_MS = 2000;
 const uint16_t PC_FLASH_MS = 1000;
 const uint16_t EDIT_ANIM_INTERVAL_MS = 150;
-const uint16_t SAVED_DISPLAY_MS = 2000;
+const uint16_t SAVED_ANIM_INTERVAL_MS = 200;
+const uint16_t SAVED_DISPLAY_MS = 1200;  // 3 flashes * 2 states * 200ms
 const uint16_t CHANNEL_DISPLAY_MS = 1000;
 
 // EEPROM layout
