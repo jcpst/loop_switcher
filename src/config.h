@@ -53,7 +53,7 @@ const uint8_t MAIN_LOOP_INTERVAL_MS = 10;  // For 100Hz update rate
 
 // Timing
 const uint8_t DEBOUNCE_MS = 30;
-const uint8_t SIMULTANEOUS_WINDOW_MS = 100;
+const uint16_t SIMULTANEOUS_WINDOW_MS = 400;  // Increased from 100ms for easier combo detection
 const uint16_t LONG_PRESS_MS = 1000;
 const uint16_t EDIT_MODE_LONG_PRESS_MS = 2000;
 const uint16_t PC_FLASH_MS = 1000;

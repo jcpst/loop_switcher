@@ -99,7 +99,7 @@ void Display::update(DisplayState state, uint8_t value, const bool loopStates[4]
       break;
 
     case FLASHING_PC:
-      displayBankNumber(value, false);
+      displayProgramChange(value);
       break;
 
     case SHOWING_SAVED:
@@ -131,6 +131,18 @@ void Display::displayBankNumber(uint8_t num, bool globalPreset) {
 
   // Custom bit pattern for lowercase 'n' - set this LAST
   lc.setRow(0, 5, n);
+}
+
+void Display::displayProgramChange(uint8_t num) {
+  clearBuffered();
+
+  const uint8_t hundreds = num / 100;
+  const uint8_t tens = (num / 10) % 10;
+  const uint8_t ones = num % 10;
+
+  setDigitAtBuffered(2, hundreds, false);
+  setDigitAtBuffered(1, tens, false);
+  setDigitAtBuffered(0, ones, false);
 }
 
 void Display::displayChannel(uint8_t ch) {

@@ -12,11 +12,8 @@ void ModeController::detectSwitchPatterns() {
       exitEditMode();
       return;
     }
-
-    // Don't process other patterns while holding center switches in edit mode
-    if (switches.isPressed(1) && switches.isPressed(2)) {
-      return;
-    }
+    // Note: We no longer return early when buttons are held
+    // This allows simultaneous press detection to work properly
   }
 
   // Check for 2-second long press of center switches (edit mode)
@@ -27,11 +24,8 @@ void ModeController::detectSwitchPatterns() {
       enterEditMode();
       return;
     }
-
-    // Don't process short press patterns while holding center switches in bank mode
-    if (switches.isPressed(1) && switches.isPressed(2)) {
-      return;
-    }
+    // Note: We no longer return early when buttons are held
+    // This allows simultaneous press detection to work properly
   }
 
   // Check for simultaneous presses (within window)
@@ -41,18 +35,23 @@ void ModeController::detectSwitchPatterns() {
   const bool sw4Pressed = switches.isRecentPress(3);
 
   // Center switches: toggle Manual/Bank mode
-  if (sw2Pressed && sw3Pressed) {
+  // Skip this check if we're holding for long press (edit mode entry/exit)
+  const bool waitingForLongPress = switches.isPressed(1) && switches.isPressed(2) &&
+                                    ((state.currentMode == EDIT_MODE) ||
+                                     (state.currentMode == BANK_MODE && state.activePreset != -1));
+
+  if (sw2Pressed && sw3Pressed && !waitingForLongPress) {
     if (state.currentMode == MANUAL_MODE) {
       DEBUG_PRINTLN("Mode change: MANUAL -> BANK");
       state.currentMode = BANK_MODE;
       state.displayState = SHOWING_BANK;
-    } else if (state.currentMode == BANK_MODE) {
+    } else if (state.currentMode == BANK_MODE && state.activePreset == -1) {
+      // Only toggle to MANUAL if no preset is active (prevents conflict with edit mode entry)
       DEBUG_PRINTLN("Mode change: BANK -> MANUAL");
       state.currentMode = MANUAL_MODE;
       state.displayState = SHOWING_MANUAL;
       // Clear global preset state when leaving bank mode
       state.globalPresetActive = false;
-      state.activePreset = -1;
     }
 
     switches.clearRecentPresses();

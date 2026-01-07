@@ -13,7 +13,7 @@ struct SwitchState {
 
 class SwitchHandler {
 public:
-  SwitchHandler(const uint8_t pins[4], uint8_t debounceMs, uint8_t simultaneousWindowMs, uint16_t longPressMs);
+  SwitchHandler(const uint8_t pins[4], uint8_t debounceMs, uint16_t simultaneousWindowMs, uint16_t longPressMs);
 
   void begin();
   void readAndDebounce();
@@ -27,7 +27,7 @@ public:
 private:
   const uint8_t* switchPins;
   uint8_t debounceMs;
-  uint8_t simultaneousWindowMs;
+  uint16_t simultaneousWindowMs;
   uint16_t longPressMs;
   SwitchState switches[4];
 };

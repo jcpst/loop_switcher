@@ -1,6 +1,6 @@
 #include "switches.h"
 
-SwitchHandler::SwitchHandler(const uint8_t pins[4], uint8_t debounceMs, uint8_t simultaneousWindowMs,
+SwitchHandler::SwitchHandler(const uint8_t pins[4], uint8_t debounceMs, uint16_t simultaneousWindowMs,
                              uint16_t longPressMs)
   : switchPins(pins), debounceMs(debounceMs), simultaneousWindowMs(simultaneousWindowMs), longPressMs(longPressMs) {
 }
@@ -46,10 +46,11 @@ void SwitchHandler::readAndDebounce() {
 }
 
 bool SwitchHandler::isRecentPress(uint8_t switchIndex) const {
-  if (!switches[switchIndex].currentState) {
-    // Currently pressed
-    const unsigned long pressDuration = millis() - switches[switchIndex].pressStartTime;
-    return pressDuration < simultaneousWindowMs;
+  // Check if button was pressed recently (within simultaneousWindowMs)
+  // This includes both currently pressed AND recently released buttons
+  if (switches[switchIndex].pressStartTime > 0) {
+    const unsigned long timeSincePress = millis() - switches[switchIndex].pressStartTime;
+    return timeSincePress < simultaneousWindowMs;
   }
 
   return false;
@@ -74,8 +75,11 @@ bool SwitchHandler::isLongPress(uint8_t sw1Index, uint8_t sw2Index, uint16_t cus
 
   const bool switchesAreOn = !switches[sw1Index].currentState && !switches[sw2Index].currentState;
   const bool notTriggered = !switches[sw1Index].longPressTriggered && !switches[sw2Index].longPressTriggered;
-  const bool haveBeenHeldLongEnough = now - switches[sw1Index].pressStartTime > customLongPressMs &&
-                                now - switches[sw2Index].pressStartTime > customLongPressMs;
+
+  // Use the LATER of the two press times to determine hold duration
+  // This allows for a more natural press sequence
+  const unsigned long laterPressTime = max(switches[sw1Index].pressStartTime, switches[sw2Index].pressStartTime);
+  const bool haveBeenHeldLongEnough = now - laterPressTime > customLongPressMs;
 
   if (switchesAreOn && notTriggered && haveBeenHeldLongEnough) {
     switches[sw1Index].longPressTriggered = true;

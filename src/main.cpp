@@ -1,96 +1,44 @@
-/*
- * 4-Loop MIDI Switcher with Bank Mode
- * ATmega328 (Arduino Uno/Nano compatible)
+/**
+ * 4-Loop MIDI Switcher
+ * ATmega328 (Arduino Uno/Nano)
  *
- * Hardware:
- * - 4 momentary footswitches (active LOW with pullups)
- * - MAX7219 7-segment display driver (3 digits)
- * - 4 DPDT relays for audio switching
- * - MIDI output on hardware UART
+ * Step 2: Relay hardware validation
+ * Cycles through each relay with 500ms delay to verify all 4 click.
  */
+
 #include <Arduino.h>
 
-#include "config.h"
-#include "midi_handler.h"
-#include "display.h"
-#include "switches.h"
-#include "relays.h"
-#include "state_manager.h"
-#include "mode_controller.h"
-#include "led_controller.h"
+// ===== PIN DEFINITIONS =====
+// Footswitches (active LOW, internal pullup)
+const uint8_t SW_PINS[4] = {2, 4, 5, 6};
 
-// ===== PIN ARRAYS =====
-const uint8_t switchPins[4] = {SW1_PIN, SW2_PIN, SW3_PIN, SW4_PIN};
-const uint8_t relayPins[4] = {RELAY1_PIN, RELAY2_PIN, RELAY3_PIN, RELAY4_PIN};
+// Relay drivers (active HIGH)
+const uint8_t RELAY_PINS[4] = {7, 8, 9, 10};
 
-// ===== HARDWARE INSTANCES =====
-Display display(MAX_DIN_PIN, MAX_CLK_PIN, MAX_CS_PIN);
-SwitchHandler switches(switchPins, DEBOUNCE_MS, SIMULTANEOUS_WINDOW_MS, LONG_PRESS_MS);
-RelayController relays(relayPins);
-LedController leds(SR_DATA_PIN, SR_CLOCK_PIN, SR_LATCH_PIN, LED_ACTIVE_LOW);
-
-// ===== STATE AND CONTROLLER =====
-StateManager state;
-ModeController modeController(state, switches, relays);
+// Number of loops/relays
+const uint8_t NUM_LOOPS = 4;
 
 // ===== SETUP =====
 void setup() {
-  // Initialize hardware modules
-  switches.begin();  // Must be called first - enables pullups for DIP switch reading
-  relays.begin();
-  display.begin();
-  leds.begin();
-  initMIDI();
+  // Initialize relay pins as outputs, start LOW (off)
+  for (uint8_t i = 0; i < NUM_LOOPS; i++) {
+    digitalWrite(RELAY_PINS[i], LOW);
+    pinMode(RELAY_PINS[i], OUTPUT);
+  }
 
-  // Initialize state (reads MIDI channel from DIP switches on footswitch pins)
-  state.initialize();
-
-  // Show configured MIDI channel on display (convert 0-15 to 1-16 for display)
-  display.displayChannel(state.midiChannel + 1);
-  delay(CHANNEL_DISPLAY_MS);
-
-  // Update initial display and LEDs
-  display.update(state.displayState, state.getDisplayValue(), state.loopStates, state.globalPresetActive);
-  leds.update(state.loopStates, state.currentMode, state.activePreset, state.globalPresetActive);
+  // Initialize switch pins with internal pullups
+  for (uint8_t i = 0; i < NUM_LOOPS; i++) {
+    pinMode(SW_PINS[i], INPUT_PULLUP);
+  }
 }
 
 // ===== MAIN LOOP =====
 void loop() {
-  static unsigned long lastUpdate = 0;
-  const unsigned long currentTime = millis();
-  
-  if (currentTime - lastUpdate < MAIN_LOOP_INTERVAL_MS) {
-    return;  // 100Hz update rate
+  // Cycle through each relay: turn on, wait, turn off
+  for (uint8_t i = 0; i < NUM_LOOPS; i++) {
+    digitalWrite(RELAY_PINS[i], HIGH);
+    delay(500);
+    digitalWrite(RELAY_PINS[i], LOW);
+    delay(500);
   }
-  
-  lastUpdate = currentTime;
-  
-  switches.readAndDebounce();
-  modeController.detectSwitchPatterns();
-  modeController.updateStateMachine();
-
-  // Determine which loop states are currently applied to relays
-  const bool* appliedLoopStates;
-  
-  if (state.currentMode == EDIT_MODE) {
-    appliedLoopStates = state.editModeLoopStates;
-    relays.update(state.editModeLoopStates);
-  } else {
-    appliedLoopStates = state.loopStates;
-    relays.update(state.loopStates);
-  }
-
-  // Update LEDs with applied loop states
-  leds.update(appliedLoopStates, state.currentMode, state.activePreset, state.globalPresetActive);
-
-  // Update display with appropriate animation frame
-  const uint8_t animFrame = (state.displayState == SHOWING_SAVED)
-                             ? state.savedDisplayAnimFrame
-                             : state.editModeAnimFrame;
-  display.update(
-    state.displayState,
-    state.getDisplayValue(),
-    state.getDisplayLoops(),
-    state.globalPresetActive,
-    animFrame);
 }
