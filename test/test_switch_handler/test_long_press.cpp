@@ -1,7 +1,7 @@
 #ifdef UNIT_TEST
 
 #include <unity.h>
-#include "../../src/switch_handler.h"
+#include "switch_handler.h"
 
 // Test helper
 void setRawStates(bool states[4], bool s0, bool s1, bool s2, bool s3) {
