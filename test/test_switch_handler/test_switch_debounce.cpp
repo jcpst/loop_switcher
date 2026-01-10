@@ -3,8 +3,17 @@
 #include <unity.h>
 #include "switch_handler.h"
 
+// Unity setup/teardown
+void setUp(void) {
+    // Set up before each test
+}
+
+void tearDown(void) {
+    // Clean up after each test
+}
+
 // Test helper to create raw states array
-void setRawStates(bool states[4], bool s0, bool s1, bool s2, bool s3) {
+static void setRawStates(bool states[4], bool s0, bool s1, bool s2, bool s3) {
     states[0] = s0;
     states[1] = s1;
     states[2] = s2;
