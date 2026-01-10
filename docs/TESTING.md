@@ -18,8 +18,8 @@ pio test -e native
 
 ### Run specific test suite
 ```bash
-pio test -e native -f test_switch_debounce
-pio test -e native -f test_long_press
+pio test -e native -f test_sanity           # Framework sanity check
+pio test -e native -f test_switch_handler   # SwitchHandler tests (13 tests)
 ```
 
 ### Verbose output
@@ -34,14 +34,21 @@ test/
 ├── mocks/
 │   ├── Arduino.h          # Mock Arduino functions
 │   └── Arduino.cpp        # Mock implementation
+├── test_sanity/
+│   └── test_sanity.cpp    # Framework sanity check
 └── test_switch_handler/
-    ├── test_switch_debounce.cpp   # Debouncing tests
-    └── test_long_press.cpp        # Long press & pattern tests
+    ├── Arduino.h          # Arduino mocks (local copy)
+    ├── Arduino.cpp
+    ├── switch_handler.h   # Module under test (local copy)
+    ├── switch_handler.cpp
+    └── test_main.cpp      # All switch handler tests (13 tests)
 ```
 
 ## What's Tested
 
-### Switch Debouncing (`test_switch_debounce.cpp`)
+### SwitchHandler Tests (`test_main.cpp`)
+
+**Debouncing (6 tests):**
 - Initial state detection
 - Press detection after debounce delay
 - Bounce filtering
@@ -49,7 +56,7 @@ test/
 - Switch release detection
 - State reset
 
-### Long Press Detection (`test_long_press.cpp`)
+**Long Press Detection (7 tests):**
 - Long press threshold timing
 - Single-trigger per press
 - Reset after release
